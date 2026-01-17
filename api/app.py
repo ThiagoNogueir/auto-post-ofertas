@@ -179,21 +179,41 @@ def update_settings():
         interval = data.get('interval')
         
         if interval:
-            from src.utils.config_manager import set_interval
+            try:
+                from src.utils.config_manager import set_interval
+            except ImportError:
+                from utils.config_manager import set_interval
+                
             set_interval(int(interval))
             return jsonify({'status': 'success', 'message': f'Interval updated to {interval} minutes'})
             
         return jsonify({'error': 'Missing interval parameter'}), 400
     except Exception as e:
+        print(f"Error in /settings: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/trigger', methods=['POST'])
 def trigger_run():
     """Force run the bot immediately."""
     try:
-        from src.utils.config_manager import set_force_run
+        try:
+            from src.utils.config_manager import set_force_run
+        except ImportError:
+            from utils.config_manager import set_force_run
+            
         set_force_run()
         return jsonify({'status': 'success', 'message': 'Job triggered successfully'})
+    except Exception as e:
+        print(f"Error in /trigger: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/clear-deals', methods=['POST'])
+def clear_deals():
+    """Clear all deals from database."""
+    try:
+        query = Deal.delete()
+        count = query.execute()
+        return jsonify({'status': 'success', 'message': f'Deleted {count} deals'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

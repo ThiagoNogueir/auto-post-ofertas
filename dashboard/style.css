@@ -535,3 +535,21 @@ header h1 {
         width: 100%;
     }
 }
+
+.btn-danger {
+    background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 65, 108, 0.4);
+}

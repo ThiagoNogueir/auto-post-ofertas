@@ -158,11 +158,18 @@ def parse_mercadolivre(soup: BeautifulSoup) -> List[Dict]:
             # Some layouts have cents in a separate superscrit tag
             # We can improve this later if needed. For now main fraction is usually enough.
             
-            # IMAGE
+            # IMAGE - Improved extraction logic
             image_url = None
             img_tag = card.select_one('img')
             if img_tag:
-                image_url = img_tag.get('src') or img_tag.get('data-src') or img_tag.get('data-lazy')
+                # Prioritize lazy loading attributes which usually hold high-res real images
+                image_url = img_tag.get('data-src') or img_tag.get('data-lazy')
+                
+                # If not found, fall back to src, but avoid small base64 placeholders
+                if not image_url:
+                    src = img_tag.get('src')
+                    if src and not src.startswith('data:image'):
+                        image_url = src
 
             # CATEGORY DETECTION
             category = detect_category(title, original_url)

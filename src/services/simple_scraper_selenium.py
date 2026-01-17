@@ -84,9 +84,13 @@ def fetch_html_selenium(url: str) -> str:
         # Additional wait for JS to finish rendering
         time.sleep(3)
         
-        # Scroll down to trigger lazy loading
-        driver.execute_script("window.scrollTo(0, 1000);")
-        time.sleep(3)  # Increased from 2 to 3
+        # Scroll down progressively to trigger ALL lazy loading
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 3);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 1.5);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
         
         html = driver.page_source
         

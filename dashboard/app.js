@@ -62,6 +62,23 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('❌ Erro de conexão.');
         }
     });
+    // Clear Deals
+    document.getElementById('clear-deals-btn').addEventListener('click', async () => {
+        if (!confirm('⚠️ ATENÇÃO: Isso excluirá TODAS as ofertas do banco de dados.\nDeseja continuar?')) return;
+
+        try {
+            const res = await fetch(`${API_URL}/clear-deals`, { method: 'POST' });
+            if (res.ok) {
+                alert('🗑️ Todas as ofertas foram removidas.');
+                loadDashboard();
+            }
+            else alert('❌ Erro ao limpar ofertas.');
+        } catch (e) {
+            console.error(e);
+            alert('❌ Erro de conexão.');
+        }
+    });
+
 });
 
 async function loadCategories() {
