@@ -9,3 +9,5 @@ fake-useragent
 loguru
 flask
 flask-cors
+
+beautifulsoup4

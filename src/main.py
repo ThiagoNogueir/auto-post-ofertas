@@ -11,40 +11,20 @@ from typing import List, Dict
 from dotenv import load_dotenv
 
 from .database import init_database, is_deal_processed, save_deal
-from .services import extract_deals_from_text, validate_deal, send_deal, send_notification
+from .database import init_database, is_deal_processed, save_deal
+from .services import validate_deal, send_deal, send_notification
+from .services.parser import extract_deals_from_html
 from .services.simple_affiliate import generate_simple_link as generate_link
 from .utils.logger import logger
 
 # Load environment variables
-load_dotenv()
-
+from .services.simple_scraper_selenium import fetch_html_selenium
 
 def fetch_raw_data(url: str) -> str:
     """
-    Fetch raw data from a URL using Jina AI Reader.
-    
-    Jina AI Reader converts any URL to clean markdown.
-    
-    Args:
-        url: URL to fetch
-        
-    Returns:
-        Raw markdown text
+    Fetch raw HTML using Selenium to handle JS-heavy sites (Shopee).
     """
-    try:
-        jina_url = f"https://r.jina.ai/{url}"
-        logger.info(f"Fetching data from: {url}")
-        
-        response = requests.get(jina_url, timeout=30)
-        response.raise_for_status()
-        
-        content = response.text
-        logger.info(f"Fetched {len(content)} characters of content")
-        return content
-        
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch data from {url}: {e}")
-        return ""
+    return fetch_html_selenium(url)
 
 
 def process_deal(deal: Dict) -> bool:
@@ -153,8 +133,8 @@ def run_job():
                 logger.warning(f"No data fetched from {url}, skipping")
                 continue
             
-            # 2. Extract deals using AI
-            deals = extract_deals_from_text(raw_data)
+            # 2. Extract deals using Parser (No AI)
+            deals = extract_deals_from_html(raw_data, url)
             total_deals_found += len(deals)
             
             if not deals:
@@ -186,6 +166,7 @@ def main():
     logger.info("PromoBot MultiMarket Docker Gold - Starting...")
     logger.info("=" * 60)
     
+
     # Initialize database
     logger.info("Initializing database...")
     init_database()
@@ -198,21 +179,41 @@ def main():
     # Send startup notification
     send_notification("🤖 PromoBot started successfully!")
     
-    # Schedule job to run every hour
-    schedule.every(1).hours.do(run_job)
+    # Start API in a separate thread (if not already running)
+    try:
+        import threading
+        from api.app import app
+        def run_api():
+            app.run(host='0.0.0.0', port=8000, use_reloader=False) # use_reloader=False is important for threads
+        
+        api_thread = threading.Thread(target=run_api)
+        api_thread.daemon = True
+        api_thread.start()
+        logger.info("API Server started on port 8000")
+    except Exception as e:
+        logger.error(f"Failed to start API thread: {e}")
+
+    # Import config manager
+    from src.utils.config_manager import should_run, update_last_run
     
     # Run immediately on startup
     logger.info("Running initial job...")
     run_job()
+    update_last_run()
     
     # Keep running
-    logger.info("Entering main loop. Press Ctrl+C to stop.")
+    logger.info("Entering dynamic main loop. Press Ctrl+C to stop.")
     try:
         while True:
-            schedule.run_pending()
-            time.sleep(60)  # Check every minute
+            if should_run():
+                logger.info("Triggering scheduled job...")
+                run_job()
+                update_last_run()
+            
+            time.sleep(5)  # Check every 5 seconds for force_run or timeout
     except KeyboardInterrupt:
         logger.info("Shutting down PromoBot...")
+
         send_notification("🛑 PromoBot stopped")
 
 

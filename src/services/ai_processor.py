@@ -42,7 +42,7 @@ def extract_deals_from_text(raw_text: str) -> List[Dict]:
         return []
     
     # Truncate text if too large (Groq has token limits)
-    MAX_CHARS = 20000  # ~5000 tokens (safe limit for Groq free tier)
+    MAX_CHARS = 30000  # Adjusted limit
     if len(raw_text) > MAX_CHARS:
         logger.warning(f"Text too large ({len(raw_text)} chars), truncating to {MAX_CHARS}")
         raw_text = raw_text[:MAX_CHARS]
@@ -70,7 +70,7 @@ Text to analyze:
         
         logger.info("Sending request to Groq API...")
         
-        # Use Groq's llama model (very fast and free!)
+        # Use Groq's mixtral model (good balance of rate limits and performance)
         chat_completion = client.chat.completions.create(
             messages=[
                 {
@@ -78,7 +78,7 @@ Text to analyze:
                     "content": prompt,
                 }
             ],
-            model="llama-3.3-70b-versatile",  # Fast and powerful model
+            model="mixtral-8x7b-32768",
             temperature=0.3,  # Lower temperature for more consistent JSON output
         )
         

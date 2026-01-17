@@ -5,8 +5,8 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 def generate_simple_link(url: str) -> str:
     """
-    Adds affiliate tracking parameters to URLs based on configuration.
-    This is a simplified version that doesn't require scraping/login.
+    Generates affiliate links by appending specific query parameters.
+    No scraping or external API calls involved for stability.
     """
     try:
         parsed = urlparse(url)
@@ -14,22 +14,46 @@ def generate_simple_link(url: str) -> str:
         
         # Mercado Livre
         if 'mercadolivre.com' in parsed.netloc:
-            # Mercado Livre uses encrypted /sec/ links that cannot be generated
-            # without their official API or logging into the dashboard.
-            # To automate this reliably, consider using an Affiliate Network (Lomadee, Awin).
-            # Returning original URL to prevent 404s.
-            return url
+            # Mercado Livre uses encrypted /sec/ links usually, but we can try appending tracking IDs
+            ml_id = os.getenv('ML_AFFILIATE_ID')
+            if ml_id:
+                params['tracking_id'] = [ml_id]
+                params['matt_tool'] = ['my_bot'] # Identificador opcional
                 
+                # Rebuild URL
+                new_query = urlencode(params, doseq=True)
+                new_url = urlunparse((
+                    parsed.scheme,
+                    parsed.netloc,
+                    parsed.path,
+                    parsed.params,
+                    new_query,
+                    parsed.fragment
+                ))
+                return new_url
+            return url
+            
         # Shopee
         elif 'shopee.com' in parsed.netloc:
             shopee_id = os.getenv('SHOPEE_AFFILIATE_ID')
             if shopee_id:
-                params['af_id'] = [shopee_id] # Example param
+                # Add Shopee affiliate params if ID exists
+                params['af_id'] = [shopee_id]
+                params['utm_source'] = [shopee_id]
                 
-        # Rebuild URL
-        new_query = urlencode(params, doseq=True)
-        new_url = urlunparse(parsed._replace(query=new_query))
-        return new_url
+                # Rebuild URL
+                new_query = urlencode(params, doseq=True)
+                new_url = urlunparse((
+                    parsed.scheme,
+                    parsed.netloc,
+                    parsed.path,
+                    parsed.params,
+                    new_query,
+                    parsed.fragment
+                ))
+                return new_url
+        
+        return url
         
     except Exception as e:
         print(f"Error generating link: {e}")

@@ -28,6 +28,40 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('refresh-btn').addEventListener('click', () => {
         loadDashboard();
     });
+
+    // Save Interval
+    document.getElementById('save-interval-btn').addEventListener('click', async () => {
+        const interval = document.getElementById('interval-input').value;
+        try {
+            const res = await fetch(`${API_URL}/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ interval })
+            });
+            if (res.ok) alert('✅ Intervalo salvo com sucesso!');
+            else alert('❌ Erro ao salvar intervalo.');
+        } catch (e) {
+            console.error(e);
+            alert('❌ Erro de conexão.');
+        }
+    });
+
+    // Trigger Run
+    document.getElementById('trigger-btn').addEventListener('click', async () => {
+        if (!confirm('Deseja iniciar a busca de ofertas agora?')) return;
+
+        try {
+            const res = await fetch(`${API_URL}/trigger`, { method: 'POST' });
+            if (res.ok) {
+                alert('🚀 Bot iniciado! As ofertas aparecerão em breve.');
+                // Refresh stats immediately to see "Running..." if we had that status
+            }
+            else alert('❌ Erro ao iniciar bot.');
+        } catch (e) {
+            console.error(e);
+            alert('❌ Erro de conexão.');
+        }
+    });
 });
 
 async function loadCategories() {
@@ -83,7 +117,8 @@ async function loadDashboard() {
         await Promise.all([
             loadStats(),
             loadDeals(),
-            loadConfig()
+            loadConfig(),
+            loadCategories() // Update categories dynamically
         ]);
     } catch (error) {
         console.error('Error loading dashboard:', error);
@@ -107,8 +142,13 @@ async function loadStats() {
 async function loadDeals() {
     try {
         let url = `${API_URL}/deals`;
-        if (currentCategory !== 'Todas') {
-            url += `?category=${encodeURIComponent(currentCategory)}`;
+        let params = [];
+
+        if (currentCategory !== 'Todas') params.push(`category=${encodeURIComponent(currentCategory)}`);
+        if (currentStore !== 'Todas') params.push(`store=${encodeURIComponent(currentStore)}`);
+
+        if (params.length > 0) {
+            url += '?' + params.join('&');
         }
 
         const response = await fetch(url);

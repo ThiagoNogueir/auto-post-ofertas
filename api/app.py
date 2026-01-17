@@ -171,5 +171,31 @@ def get_config():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/settings', methods=['POST'])
+def update_settings():
+    """Update bot settings (interval)."""
+    try:
+        data = request.json
+        interval = data.get('interval')
+        
+        if interval:
+            from src.utils.config_manager import set_interval
+            set_interval(int(interval))
+            return jsonify({'status': 'success', 'message': f'Interval updated to {interval} minutes'})
+            
+        return jsonify({'error': 'Missing interval parameter'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/trigger', methods=['POST'])
+def trigger_run():
+    """Force run the bot immediately."""
+    try:
+        from src.utils.config_manager import set_force_run
+        set_force_run()
+        return jsonify({'status': 'success', 'message': 'Job triggered successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)

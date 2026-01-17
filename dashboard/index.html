@@ -10,9 +10,21 @@
 
 <body>
     <div class="container">
-        <header>
-            <h1>🤖 PromoBot Dashboard</h1>
-            <p class="subtitle">Monitor de Ofertas em Tempo Real</p>
+        <header class="main-header">
+            <div class="header-content">
+                <h1>🤖 PromoBot Dashboard</h1>
+                <p class="subtitle">Monitor de Ofertas em Tempo Real</p>
+            </div>
+
+            <div class="header-controls">
+                <div class="control-group">
+                    <label>Intervalo:</label>
+                    <input type="number" id="interval-input" value="30" min="10" max="1440" class="time-input">
+                    <span class="unit">min</span>
+                    <button id="save-interval-btn" class="btn-icon" title="Salvar Intervalo">💾</button>
+                </div>
+                <button id="trigger-btn" class="btn-action-header">⚡ Rodar Agora</button>
+            </div>
         </header>
 
         <div class="stats-grid">
@@ -89,6 +101,7 @@
                     <span class="config-label">Última Execução:</span>
                     <span id="last-run">Carregando...</span>
                 </div>
+
             </div>
         </div>
     </div>
