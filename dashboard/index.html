@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromoBot Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 PromoBot Dashboard</h1>
+            <p class="subtitle">Monitor de Ofertas em Tempo Real</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <h3 id="total-deals">0</h3>
+                    <p>Total de Ofertas</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                    <h3 id="sent-deals">0</h3>
+                    <p>Enviadas</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h3 id="total-savings">R$ 0</h3>
+                    <p>Economia Total</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <h3 id="avg-discount">0%</h3>
+                    <p>Desconto Médio</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="deals-section">
+            <div class="section-header">
+                <h2>📋 Últimas Ofertas</h2>
+                <button id="refresh-btn" class="btn-refresh">🔄 Atualizar</button>
+            </div>
+            
+            <div id="deals-list" class="deals-list">
+                <div class="loading">Carregando ofertas...</div>
+            </div>
+        </div>
+
+        <div class="config-section">
+            <h2>⚙️ Configurações</h2>
+            <div class="config-grid">
+                <div class="config-item">
+                    <span class="config-label">Modo Debug:</span>
+                    <span id="debug-mode" class="badge">Carregando...</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Telegram:</span>
+                    <span id="telegram-status" class="badge">Carregando...</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Groq AI:</span>
+                    <span id="ai-status" class="badge">Carregando...</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Última Execução:</span>
+                    <span id="last-run">Carregando...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

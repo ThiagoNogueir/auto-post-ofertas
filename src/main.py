@@ -10,9 +10,9 @@ import requests
 from typing import List, Dict
 from dotenv import load_dotenv
 
-from database import init_database, is_deal_processed, save_deal
-from services import extract_deals_from_text, validate_deal, generate_link, send_deal, send_notification
-from utils.logger import logger
+from .database import init_database, is_deal_processed, save_deal
+from .services import extract_deals_from_text, validate_deal, generate_link, send_deal, send_notification
+from .utils.logger import logger
 
 # Load environment variables
 load_dotenv()
