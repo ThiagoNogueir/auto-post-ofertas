@@ -1,0 +1,9 @@
+requests
+google-generativeai
+selenium
+webdriver-manager
+python-dotenv
+schedule
+peewee
+fake-useragent
+loguru

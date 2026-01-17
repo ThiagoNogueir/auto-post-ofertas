@@ -1,242 +1,112 @@
-# Guia de Início Rápido - Auto-Post
+# 🚀 Guia Rápido de Início
 
-Este guia ajudará você a ter o sistema funcionando em **15 minutos**.
+## Configuração Inicial (5 minutos)
 
-## Passo 1: Pré-requisitos (5 min)
-
-Certifique-se de ter instalado:
-
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [Node.js 20+](https://nodejs.org/)
-
-Verifique as instalações:
-
+### 1. Configure a API do Google Gemini
 ```bash
-docker --version
-node --version
-npm --version
+# Acesse: https://makersuite.google.com/app/apikey
+# Copie sua chave e cole no .env
 ```
 
-## Passo 2: Configuração Inicial (3 min)
-
-Clone o repositório e configure:
-
+### 2. Edite o arquivo .env
 ```bash
-# Clone
-git clone <repo-url>
-cd auto-post
-
-# Copie as variáveis de ambiente
-cp .env.example .env
-
-# Inicie os serviços com Docker
-docker-compose up -d
+# Abra o arquivo .env e configure:
+GOOGLE_API_KEY=SUA_CHAVE_AQUI
+DEBUG_MODE=True  # Mantenha True para testar
 ```
 
-Aguarde os containers iniciarem. Verifique com:
-
+### 3. Teste a instalação (Opcional - apenas local)
 ```bash
-docker-compose ps
-```
-
-Todos os serviços devem estar "Up".
-
-## Passo 3: Backend Setup (3 min)
-
-```bash
-# Entre na pasta do backend
-cd backend
-
-# Instale dependências
-npm install
-
-# Execute migrations
-npx prisma migrate dev --name init
-
-# Volte para raiz
-cd ..
-```
-
-## Passo 4: Dashboard Setup (2 min)
-
-```bash
-# Entre na pasta do dashboard
-cd dashboard
-
-# Instale dependências
-npm install
-
-# Inicie o dashboard
-npm run dev
-```
-
-## Passo 5: Teste o Sistema (2 min)
-
-### 5.1 Acesse o Dashboard
-
-Abra seu navegador em: http://localhost:3000
-
-Você deve ver a interface do Auto-Post.
-
-### 5.2 Adicione um Link de Teste
-
-1. Clique em "Links" no menu lateral
-2. Cole um link de produto do Mercado Livre (exemplo):
-   ```
-   https://www.mercadolivre.com.br/relogio-smartwatch-inteligente-cor-preto/p/MLB15898803
-   ```
-3. Clique em "Adicionar Link"
-
-### 5.3 Acompanhe o Scraping
-
-1. O sistema detectará automaticamente que é Mercado Livre
-2. Em alguns segundos, você verá o status mudar para "success"
-3. Clique em "Produtos" para ver o produto coletado
-
-### 5.4 Verifique o n8n (Opcional)
-
-1. Acesse http://localhost:5678
-2. Login: `admin` / `admin123`
-3. Importe o workflow de `n8n/workflows/post-produto.json`
-
-## Verificação Rápida
-
-Execute este checklist para garantir que tudo está funcionando:
-
-- [ ] Dashboard carregando em http://localhost:3000
-- [ ] Backend respondendo em http://localhost:8080
-- [ ] n8n acessível em http://localhost:5678
-- [ ] Conseguiu adicionar um link
-- [ ] Link foi processado com sucesso
-- [ ] Produto apareceu na listagem
-
-## Próximos Passos
-
-Agora que o sistema está funcionando:
-
-1. **Configure APIs Sociais**: Veja [n8n/README.md](n8n/README.md) para configurar Instagram, Pinterest e WhatsApp
-2. **Teste um Post**: Crie um post de teste em "Posts" > "Criar Post"
-3. **Personalize**: Edite templates de legenda no workflow do n8n
-
-## Problemas Comuns
-
-### "Cannot connect to Docker daemon"
-
-**Solução**: Inicie o Docker Desktop
-
-### "Port already in use"
-
-**Solução**: Algum serviço já está usando as portas. Pare-os ou mude as portas no `docker-compose.yml`:
-
-```yaml
-services:
-  backend:
-    ports:
-      - "8081:8080"  # Mudou de 8080 para 8081
-```
-
-### Dashboard mostra "API error"
-
-**Solução**: Verifique se o backend está rodando:
-
-```bash
-curl http://localhost:8080
-```
-
-Se não responder, reinicie:
-
-```bash
-docker-compose restart backend
-```
-
-### Scraper não processa links
-
-**Solução**: Verifique logs do scraper:
-
-```bash
-docker-compose logs -f scraper
-```
-
-Se houver erros com Playwright, reconstrua a imagem:
-
-```bash
-docker-compose build --no-cache scraper
-docker-compose up -d scraper
-```
-
-## Comandos Úteis
-
-```bash
-# Ver logs de todos os serviços
-docker-compose logs -f
-
-# Ver logs de um serviço específico
-docker-compose logs -f backend
-
-# Reiniciar um serviço
-docker-compose restart backend
-
-# Parar tudo
-docker-compose down
-
-# Parar e remover volumes (limpa banco de dados)
-docker-compose down -v
-
-# Reconstruir imagens
-docker-compose build --no-cache
-
-# Ver status dos containers
-docker-compose ps
-```
-
-## Desenvolvimento
-
-Se você quer desenvolver localmente sem Docker:
-
-### Terminal 1 - PostgreSQL e Redis
-
-```bash
-docker-compose up -d postgres redis
-```
-
-### Terminal 2 - Backend
-
-```bash
-cd backend
-npm run start:dev
-```
-
-### Terminal 3 - Scraper
-
-```bash
-cd scraper
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-playwright install chromium
-python src/worker.py
+python test_installation.py
 ```
 
-### Terminal 4 - Dashboard
-
+### 4. Execute com Docker
 ```bash
-cd dashboard
-npm run dev
+docker-compose up --build
 ```
 
-### Terminal 5 - n8n (Opcional)
+## ✅ Verificação
 
+Você deve ver logs como:
+```
+PromoBot MultiMarket Docker Gold - Starting...
+Initializing database...
+Running in DEBUG MODE - deals will not be sent to Telegram
+Running initial job...
+```
+
+## 🎯 Próximos Passos
+
+### Para Produção:
+
+1. **Configure o Telegram Bot**
+   - Fale com @BotFather no Telegram
+   - Crie um bot com `/newbot`
+   - Copie o token para `.env`
+
+2. **Obtenha o Chat ID**
+   - Envie uma mensagem para seu bot
+   - Acesse: `https://api.telegram.org/bot<TOKEN>/getUpdates`
+   - Copie o `chat.id` para `.env`
+
+3. **Desative o Debug Mode**
+   ```env
+   DEBUG_MODE=False
+   ```
+
+4. **Reinicie o bot**
+   ```bash
+   docker-compose restart
+   ```
+
+## 🔧 Personalização
+
+### Alterar URLs Monitoradas
+Edite `src/main.py`, linha ~100:
+```python
+urls_to_monitor = [
+    "https://shopee.com.br/flash_sale",
+    "https://www.mercadolivre.com.br/ofertas",
+]
+```
+
+### Alterar Frequência
+Edite `src/main.py`, linha ~150:
+```python
+schedule.every(1).hours.do(run_job)  # A cada 1 hora
+```
+
+## 📊 Monitoramento
+
+### Ver logs em tempo real
 ```bash
-docker-compose up -d n8n
+docker-compose logs -f
 ```
 
-## Suporte
+### Ver banco de dados
+```bash
+# Instale sqlite3
+sqlite3 data/deals.db "SELECT * FROM deals;"
+```
 
-Problemas? Consulte:
+## 🐛 Problemas Comuns
 
-- [README.md](README.md) - Documentação completa
-- [SETUP.md](SETUP.md) - Setup detalhado
-- [n8n/README.md](n8n/README.md) - Configuração do n8n
-- Issues do GitHub
+### "GOOGLE_API_KEY not configured"
+- Verifique se você configurou a chave no `.env`
+- A chave não pode ser "sua_chave"
 
-Boa sorte! 🚀
+### "Chrome not found"
+- No Docker: já está incluído
+- Local: instale o Chrome/Chromium
+
+### "No deals found"
+- Normal! Nem sempre há ofertas
+- Teste com URLs diferentes
+- Verifique os logs para mais detalhes
+
+## 📚 Documentação Completa
+Veja `README.md` para documentação detalhada.
+
+---
+**Dica**: Mantenha `DEBUG_MODE=True` até ter certeza que tudo está funcionando!
