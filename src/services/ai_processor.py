@@ -59,6 +59,7 @@ For each deal found, return a JSON object with these fields:
 - new_price: Promotional price (number only, without currency symbol)
 - image_url: Product image URL (if available, otherwise null)
 - original_url: Product page URL
+- category: Classify into one of: [Eletrônicos, Casa, Moda, Games, Beleza, Outros]
 
 Return ONLY a valid JSON array containing the deals. Do not include any explanation or markdown formatting.
 If no deals are found, return an empty array [].

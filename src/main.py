@@ -11,7 +11,8 @@ from typing import List, Dict
 from dotenv import load_dotenv
 
 from .database import init_database, is_deal_processed, save_deal
-from .services import extract_deals_from_text, validate_deal, generate_link, send_deal, send_notification
+from .services import extract_deals_from_text, validate_deal, send_deal, send_notification
+from .services.simple_affiliate import generate_simple_link as generate_link
 from .utils.logger import logger
 
 # Load environment variables
@@ -85,6 +86,13 @@ def process_deal(deal: Dict) -> bool:
         
         deal['affiliate_url'] = affiliate_url
         
+        # Determine store name
+        store_name = 'Outros'
+        if 'mercadolivre.com' in original_url:
+            store_name = 'Mercado Livre'
+        elif 'shopee.com' in original_url:
+            store_name = 'Shopee'
+            
         # Send to Telegram
         if send_deal(deal):
             # Save to database
@@ -93,7 +101,10 @@ def process_deal(deal: Dict) -> bool:
                 title=deal.get('title', ''),
                 price=float(deal.get('new_price', 0)),
                 original_url=original_url,
-                affiliate_url=affiliate_url
+                affiliate_url=affiliate_url,
+                image_url=deal.get('image_url'),
+                category=deal.get('category', 'Outros'),
+                store=store_name
             )
             logger.info(f"Deal processed successfully: {deal.get('title')}")
             return True
@@ -116,9 +127,18 @@ def run_job():
     
     try:
         # Example URLs to monitor (you can make this configurable)
+        # Monitor main offers AND specific categories for better deal finding
         urls_to_monitor = [
-            "https://shopee.com.br/flash_sale",
-            "https://www.mercadolivre.com.br/ofertas",
+            # --- Mercado Livre  ---
+            "https://lista.mercadolivre.com.br/ofertas",
+            "https://lista.mercadolivre.com.br/celulares-telefones/_Discount_5-100", # Filtro de desconto ativo
+            "https://lista.mercadolivre.com.br/informatica/_Discount_5-100",
+            "https://lista.mercadolivre.com.br/games/_Discount_5-100",
+            
+            # --- Shopee (Busca com filtro de desconto/relevancia) ---
+            "https://shopee.com.br/search?keyword=celular&sortBy=sales",
+            "https://shopee.com.br/search?keyword=notebook&sortBy=sales",
+            "https://shopee.com.br/search?keyword=game&sortBy=sales",
         ]
         
         total_deals_found = 0

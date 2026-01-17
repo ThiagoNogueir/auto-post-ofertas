@@ -1,125 +1,92 @@
-# PromoBot MultiMarket Docker Gold 🤖
+# 🤖 PromoBot MultiMarket - Automação de Ofertas com IA
 
-Automação Python Dockerizada para monitorar ofertas da Shopee e Mercado Livre. Inclui evasão de detecção (Stealth), gestão de sessão (Cookies), IA (Gemini), Banco de Dados (Deduplicação) e Modo Debug.
+Bot automatizado para monitorar ofertas da **Shopee** e **Mercado Livre**, processar com **IA (Groq)** e enviar notificações via **Telegram**.
 
-## 🚀 Características
+## ✨ Características
 
-- **🐳 Dockerizado**: Fácil deploy e isolamento completo
-- **🕵️ Stealth Mode**: Evasão avançada de detecção de bots
-- **🤖 IA Integrada**: Google Gemini para análise inteligente de ofertas
-- **💾 Deduplicação**: SQLite com Peewee ORM para evitar ofertas repetidas
-- **🔐 Gestão de Sessão**: Cookies persistentes para manter login
-- **📱 Notificações Telegram**: Envio automático de ofertas
-- **🐛 Modo Debug**: Teste sem enviar mensagens reais
+- 🤖 **IA Integrada** - Groq AI (gratuito e rápido) para análise de ofertas
+- 🐳 **Dockerizado** - Deploy fácil e isolado
+- 💾 **Deduplicação** - SQLite + Peewee ORM evita ofertas repetidas
+- 📱 **Telegram** - Notificações automáticas
+- 🔐 **Stealth Mode** - Navegador com anti-detecção
+- 📊 **Dashboard Web** - Estatísticas em tempo real
+- 🔗 **Links de Afiliado** - Geração automática para Mercado Livre
+- 🐛 **Modo Debug** - Teste sem enviar mensagens
 
-## 📋 Pré-requisitos
+## 🚀 Início Rápido
 
-- Docker e Docker Compose instalados
-- Chave da API do Google Gemini
-- Bot do Telegram configurado (opcional para produção)
+### 1. Configure a API do Groq (GRATUITA!)
 
-## ⚙️ Configuração
+1. Acesse: https://console.groq.com/
+2. Crie uma conta (sem cartão de crédito)
+3. Gere uma API Key: https://console.groq.com/keys
+4. Copie a chave (começa com `gsk_...`)
 
-1. **Clone o repositório**
-```bash
-git clone <seu-repo>
-cd auto-post-ofertas
-```
-
-2. **Configure as variáveis de ambiente**
-
-Edite o arquivo `.env`:
+### 2. Configure o .env
 
 ```env
-# Modo Debug (True = apenas loga, False = envia para Telegram)
 DEBUG_MODE=True
-
-# Google Gemini API
-GOOGLE_API_KEY=sua_chave_aqui
-
-# Telegram (necessário apenas em produção)
-TELEGRAM_BOT_TOKEN=seu_token_aqui
-TELEGRAM_CHAT_ID=seu_chat_id_aqui
-
-# Credenciais Shopee (para geração de links de afiliado)
-SHOPEE_LOGIN=seu_email@example.com
-SHOPEE_PASS=sua_senha
+GROQ_API_KEY=gsk_SUA_CHAVE_AQUI
+TELEGRAM_BOT_TOKEN=seu_token  # Opcional para testes
+TELEGRAM_CHAT_ID=seu_chat_id  # Opcional para testes
 ```
 
-3. **Obtenha sua chave do Google Gemini**
-   - Acesse: https://makersuite.google.com/app/apikey
-   - Crie uma nova chave API
-   - Cole no `.env`
+### 3. Execute com Docker
 
-4. **Configure o Bot do Telegram** (opcional, apenas para produção)
-   - Fale com [@BotFather](https://t.me/botfather)
-   - Crie um novo bot com `/newbot`
-   - Copie o token
-   - Para obter o Chat ID, envie uma mensagem para seu bot e acesse:
-     `https://api.telegram.org/bot<SEU_TOKEN>/getUpdates`
-
-## 🐳 Executando com Docker
-
-### Build e Start
 ```bash
 docker-compose up --build
 ```
 
-### Executar em background
+Pronto! O bot está rodando e encontrando ofertas! 🎉
+
+## 📊 Dashboard Web
+
+### Iniciar o Dashboard
+
 ```bash
-docker-compose up -d
+# Instalar dependências (se não estiver usando Docker)
+pip install flask flask-cors
+
+# Iniciar API
+python api/app.py
 ```
 
-### Ver logs
-```bash
-docker-compose logs -f
+Acesse: **http://localhost:8000**
+
+### Recursos do Dashboard
+
+- 📈 Estatísticas em tempo real
+- 📋 Lista das últimas 20 ofertas
+- ⚙️ Status do bot (Debug, Telegram, IA)
+- 🔄 Atualização automática a cada 30s
+- 🎨 Design moderno dark mode
+
+## 🔧 Configuração Avançada
+
+### Telegram (Para Produção)
+
+1. Fale com [@BotFather](https://t.me/botfather)
+2. Crie um bot: `/newbot`
+3. Copie o token
+4. Obtenha o Chat ID: `https://api.telegram.org/bot<TOKEN>/getUpdates`
+5. Atualize o `.env`:
+   ```env
+   DEBUG_MODE=False
+   TELEGRAM_BOT_TOKEN=seu_token_real
+   TELEGRAM_CHAT_ID=seu_chat_id_real
+   ```
+
+### Links de Afiliado Mercado Livre
+
+Adicione ao `.env`:
+```env
+ML_ACCESS_TOKEN=seu_token_ml  # Opcional
+ML_TAG_ID=SEU_TAG_ID          # Seu ID de afiliado
 ```
 
-### Parar
-```bash
-docker-compose down
-```
+### Personalizar URLs Monitoradas
 
-## 💻 Executando Localmente (sem Docker)
-
-1. **Instale as dependências**
-```bash
-pip install -r requirements.txt
-```
-
-2. **Instale o Chrome/Chromium**
-   - Windows: Baixe o Chrome
-   - Linux: `sudo apt-get install chromium chromium-driver`
-
-3. **Execute**
-```bash
-python src/main.py
-```
-
-## 📁 Estrutura do Projeto
-
-```
-auto-post-ofertas/
-├── src/
-│   ├── browser/          # Setup do Selenium com Stealth
-│   ├── database/         # Models Peewee (SQLite)
-│   ├── services/         # IA, Links, Telegram
-│   ├── utils/            # Logger, Session Manager
-│   └── main.py           # Orquestrador principal
-├── data/                 # Banco de dados e cookies (criado automaticamente)
-├── logs/                 # Logs rotativos (criado automaticamente)
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── .env
-```
-
-## 🔧 Personalização
-
-### Alterar URLs Monitoradas
-
-Edite `src/main.py`, função `run_job()`:
-
+Edite `src/main.py`, linha ~120:
 ```python
 urls_to_monitor = [
     "https://shopee.com.br/flash_sale",
@@ -128,60 +95,120 @@ urls_to_monitor = [
 ]
 ```
 
-### Alterar Frequência de Execução
+### Alterar Frequência
 
-Edite `src/main.py`, função `main()`:
-
+Edite `src/main.py`, linha ~180:
 ```python
-# Executar a cada 30 minutos
-schedule.every(30).minutes.do(run_job)
-
-# Executar a cada 2 horas
-schedule.every(2).hours.do(run_job)
-
-# Executar diariamente às 10:00
-schedule.every().day.at("10:00").do(run_job)
+schedule.every(30).minutes.do(run_job)  # A cada 30 min
+schedule.every(2).hours.do(run_job)     # A cada 2 horas
 ```
 
-## 🐛 Debug e Troubleshooting
+## 📁 Estrutura do Projeto
 
-### Modo Debug
-Com `DEBUG_MODE=True`, as ofertas são apenas logadas, não enviadas ao Telegram.
+```
+auto-post-ofertas/
+├── src/                    # Código fonte
+│   ├── browser/           # Selenium + Stealth
+│   ├── database/          # SQLite + Peewee
+│   ├── services/          # IA, Links, Telegram, ML Affiliate
+│   └── utils/             # Logger, Sessões
+├── api/                   # API REST Flask
+├── dashboard/             # Dashboard Web
+├── data/                  # Banco de dados
+├── logs/                  # Logs rotativos
+├── Dockerfile
+├── docker-compose.yml
+└── requirements.txt
+```
 
-### Ver logs detalhados
+## 🛠️ Comandos Úteis
+
 ```bash
-tail -f logs/bot.log
+# Docker
+docker-compose up --build        # Build e start
+docker-compose up -d             # Background
+docker-compose logs -f           # Ver logs
+docker-compose down              # Parar
+
+# Local
+python src/main.py               # Executar bot
+python api/app.py                # Executar API
+python test_installation.py     # Testar instalação
+
+# Limpeza
+rm data/deals.db                 # Limpar banco
+rm data/cookies.pkl              # Limpar cookies
 ```
 
-### Limpar banco de dados
-```bash
-rm data/deals.db
+## 📊 API Endpoints
+
+### GET `/stats`
+Estatísticas gerais
+```json
+{
+  "total_deals": 10,
+  "sent_deals": 10,
+  "total_savings": 500.50,
+  "avg_discount": 35
+}
 ```
 
-### Limpar cookies salvos
-```bash
-rm data/cookies.pkl
+### GET `/deals`
+Lista de ofertas (últimas 20)
+```json
+[{
+  "id": 1,
+  "title": "Produto X",
+  "price": 99.90,
+  "old_price": 149.90,
+  "affiliate_url": "https://...",
+  "sent_at": "2026-01-17T01:54:19"
+}]
 ```
 
-## 🛡️ Recursos de Stealth
+### GET `/config`
+Status do bot
+```json
+{
+  "debug_mode": true,
+  "telegram_configured": false,
+  "ai_configured": true,
+  "last_run": "2026-01-17T01:54:19"
+}
+```
 
-O bot utiliza várias técnicas para evitar detecção:
+## 🎯 Tecnologias
 
-1. **Headless moderno** (`--headless=new`)
-2. **Flags de automação desabilitadas**
-3. **User-Agent realista e rotativo**
-4. **CDP Commands** para mascarar WebDriver
-5. **Cookies persistentes** para simular usuário real
+- **Python 3.11**
+- **Docker & Docker Compose**
+- **Groq AI** (LLaMA 3.3 70B)
+- **Selenium WebDriver** (Stealth)
+- **SQLite + Peewee ORM**
+- **Flask + Flask-CORS**
+- **Telegram Bot API**
+- **Loguru** (Logging)
+- **Schedule** (Agendamento)
 
-## 📊 Banco de Dados
+## 🐛 Troubleshooting
 
-O SQLite armazena:
-- `external_id`: ID único da oferta (evita duplicatas)
-- `title`: Título do produto
-- `price`: Preço atual
-- `original_url`: URL original
-- `affiliate_url`: URL de afiliado gerada
-- `sent_at`: Data/hora do envio
+### "GROQ_API_KEY not configured"
+→ Configure a chave no `.env`
+
+### "Chrome not found"
+→ Use Docker (já inclui Chrome) ou instale localmente
+
+### "No deals found"
+→ Normal! Nem sempre há ofertas. Teste com URLs diferentes
+
+### Dashboard não carrega
+→ Verifique se a API está rodando: `python api/app.py`
+
+## 📈 Resultados Reais
+
+O bot já encontrou ofertas como:
+- **Relógio Casio G-Shock**: R$ 499 → R$ 299 (40% OFF)
+- **Tênis Kappa**: R$ 169 → R$ 99 (41% OFF)
+- **Whey Protein**: R$ 104 → R$ 78 (24% OFF)
 
 ## 🤝 Contribuindo
 
@@ -193,8 +220,10 @@ MIT License - use como quiser!
 
 ## 👨‍💻 Autor
 
-**Thiago** - Senior Developer
+**Thiago Nogueira** - Senior Developer
 
 ---
 
-**Nota**: Este projeto é para fins educacionais. Respeite os Termos de Serviço das plataformas que você está monitorando.
+**⚠️ Aviso**: Este projeto é para fins educacionais. Respeite os Termos de Serviço das plataformas que você está monitorando.
+
+**🌟 Dica**: Mantenha `DEBUG_MODE=True` até ter certeza que tudo está funcionando!

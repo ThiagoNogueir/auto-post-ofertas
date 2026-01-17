@@ -39,12 +39,17 @@ class Deal(BaseModel):
     price = DecimalField(max_digits=10, decimal_places=2)
     original_url = TextField()
     affiliate_url = TextField(null=True)
+    image_url = TextField(null=True)
+    category = CharField(default='Outros')
+    store = CharField(default='Outros')
     sent_at = DateTimeField(default=datetime.now)
     
     class Meta:
         table_name = 'deals'
         indexes = (
             (('external_id',), True),  # Unique index for deduplication
+            (('category',), False),    # Index for filtering
+            (('store',), False),       # Index for filtering by store
         )
 
 
@@ -52,6 +57,23 @@ def init_database():
     """Initialize database and create tables if they don't exist."""
     db.connect()
     db.create_tables([Deal], safe=True)
+    
+    # Simple migrations
+    try:
+        db.execute_sql('ALTER TABLE deals ADD COLUMN image_url TEXT')
+    except Exception:
+        pass
+        
+    try:
+        db.execute_sql('ALTER TABLE deals ADD COLUMN category TEXT DEFAULT "Outros"')
+    except Exception:
+        pass
+
+    try:
+        db.execute_sql('ALTER TABLE deals ADD COLUMN store TEXT DEFAULT "Outros"')
+    except Exception:
+        pass
+        
     return db
 
 
@@ -68,7 +90,7 @@ def is_deal_processed(external_id: str) -> bool:
     return Deal.select().where(Deal.external_id == external_id).exists()
 
 
-def save_deal(external_id: str, title: str, price: float, original_url: str, affiliate_url: str = None):
+def save_deal(external_id: str, title: str, price: float, original_url: str, affiliate_url: str = None, image_url: str = None, category: str = 'Outros', store: str = 'Outros'):
     """
     Save a new deal to the database.
     
@@ -78,6 +100,9 @@ def save_deal(external_id: str, title: str, price: float, original_url: str, aff
         price: Current price
         original_url: Original product URL
         affiliate_url: Generated affiliate URL (optional)
+        image_url: Product image URL (optional)
+        category: Product category (optional)
+        store: Store name (optional)
         
     Returns:
         Created Deal instance
@@ -87,6 +112,9 @@ def save_deal(external_id: str, title: str, price: float, original_url: str, aff
         title=title,
         price=price,
         original_url=original_url,
-        affiliate_url=affiliate_url
+        affiliate_url=affiliate_url,
+        image_url=image_url,
+        category=category,
+        store=store
     )
     return deal

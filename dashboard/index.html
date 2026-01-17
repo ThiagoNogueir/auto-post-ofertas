@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PromoBot Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -52,7 +54,17 @@
                 <h2>📋 Últimas Ofertas</h2>
                 <button id="refresh-btn" class="btn-refresh">🔄 Atualizar</button>
             </div>
-            
+
+            <div class="store-bar">
+                <button class="store-btn active" data-store="Todas">🏬 Todas as Lojas</button>
+                <button class="store-btn" data-store="Mercado Livre">💛 Mercado Livre</button>
+                <button class="store-btn" data-store="Shopee">🧡 Shopee</button>
+            </div>
+
+            <div id="categories-bar" class="categories-bar">
+                <!-- Categories will be loaded dynamically -->
+            </div>
+
             <div id="deals-list" class="deals-list">
                 <div class="loading">Carregando ofertas...</div>
             </div>
@@ -83,4 +95,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

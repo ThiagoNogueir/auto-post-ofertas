@@ -90,7 +90,8 @@ header h1 {
     font-size: 0.9rem;
 }
 
-.deals-section, .config-section {
+.deals-section,
+.config-section {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 1rem;
@@ -106,8 +107,71 @@ header h1 {
     margin-bottom: 1.5rem;
 }
 
-.section-header h2 {
-    font-size: 1.5rem;
+
+.store-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    justify-content: center;
+}
+
+.store-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.store-btn:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.store-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.categories-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+}
+
+.category-btn {
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.5rem 1.25rem;
+    border-radius: 2rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.category-btn:hover {
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+.category-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .btn-refresh {
@@ -193,6 +257,43 @@ header h1 {
 .deal-meta {
     color: var(--text-secondary);
     font-size: 0.85rem;
+    margin-bottom: 0.75rem;
+}
+
+.deal-status {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.telegram-sent {
+    background: var(--success);
+    color: white;
+}
+
+.telegram-not-sent {
+    background: var(--warning);
+    color: white;
+}
+
+.affiliate-yes {
+    background: var(--primary);
+    color: white;
+}
+
+.affiliate-no {
+    background: var(--border);
+    color: var(--text-secondary);
 }
 
 .deal-actions {
@@ -215,6 +316,51 @@ header h1 {
 .btn-link:hover {
     background: var(--primary-dark);
     transform: scale(1.05);
+}
+
+.btn-copy {
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.btn-copy:hover {
+    background: var(--border);
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.copy-notification {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--success);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: slideInUp 0.3s ease;
+    z-index: 1000;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .config-grid {
@@ -270,6 +416,7 @@ header h1 {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -281,6 +428,7 @@ header h1 {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -291,9 +439,20 @@ header h1 {
     .deal-card {
         grid-template-columns: 1fr;
     }
-    
+
     .deal-image {
         width: 100%;
         height: 200px;
     }
+}
+
+.category-tag {
+    display: inline-block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-size: 0.8rem;
+    color: var(--text-primary);
 }
