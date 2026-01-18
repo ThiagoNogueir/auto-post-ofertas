@@ -25,22 +25,19 @@ def escape_markdown(text: str) -> str:
     return text
 
 
+from ..utils.helpers import shorten_url
+
 def format_deal_message(deal_data: Dict) -> str:
-    """
-    Format deal data into a Telegram message.
-    
-    Args:
-        deal_data: Deal dictionary with title, old_price, new_price, etc.
-        
-    Returns:
-        Formatted message string
-    """
+    # ... docstring ...
     title = deal_data.get('title', 'Sem título')
     old_price = deal_data.get('old_price', 0)
     new_price = deal_data.get('new_price', 0)
     affiliate_url = deal_data.get('affiliate_url', deal_data.get('original_url', ''))
     
-    # Calculate discount percentage
+    # Shorten URL
+    short_url = shorten_url(affiliate_url)
+    
+    # Calculate discount
     discount = 0
     if old_price and new_price and old_price > new_price:
         discount = int(((old_price - new_price) / old_price) * 100)
@@ -55,7 +52,8 @@ def format_deal_message(deal_data: Dict) -> str:
     else:
         message += f"💵 *R$ {escape_markdown(f'{new_price:.2f}')}*\n\n"
     
-    message += f"🔗 [Clique aqui para comprar]({escape_markdown(affiliate_url)})"
+    message += f"🔗 [Clique aqui para comprar]({escape_markdown(short_url)})\n"
+    message += f"_{escape_markdown(short_url)}_"
     
     return message
 

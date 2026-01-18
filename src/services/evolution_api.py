@@ -105,22 +105,18 @@ class EvolutionAPI:
             return False
 
 
+from ..utils.helpers import shorten_url
+
 def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: float, url: str, image_url: str = None):
-    """
-    Send a deal notification to WhatsApp group
+    # ... args docstring ...
     
-    Args:
-        group_id: WhatsApp group ID
-        title: Product title
-        price: Current price
-        old_price: Original price
-        url: Product URL
-        image_url: Optional product image URL
-    """
     evolution = EvolutionAPI()
     
     # if not evolution.is_configured():
     #     return False
+        
+    # Shorten URL
+    short_url = shorten_url(url)
     
     # Calculate discount
     discount = 0
@@ -136,7 +132,8 @@ def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: fl
 💵 *Por:* R$ {price:.2f}
 🏷️ *Desconto:* {discount}% OFF
 
-🛒 Link: {url}
+🛒 *Link de Compra:*
+{short_url}
 
 ⚡ Corre que é por tempo limitado!"""
     

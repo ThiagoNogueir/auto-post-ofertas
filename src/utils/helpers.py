@@ -1,4 +1,19 @@
 import re
+import requests
+
+def shorten_url(url: str) -> str:
+    """
+    Shorten URL using is.gd (free, no auth required).
+    Fallback to original URL if shortening fails.
+    """
+    try:
+        api_url = f"https://is.gd/create.php?format=simple&url={url}"
+        response = requests.get(api_url, timeout=5)
+        if response.status_code == 200:
+            return response.text.strip()
+        return url
+    except Exception:
+        return url
 
 def extract_product_id(url: str) -> str:
     """
