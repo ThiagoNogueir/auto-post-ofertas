@@ -37,18 +37,12 @@ def format_deal_message(deal_data: Dict) -> str:
     # Shorten URL
     short_url = shorten_url(affiliate_url)
     
-    # Calculate discount
-    discount = 0
-    if old_price and new_price and old_price > new_price:
-        discount = int(((old_price - new_price) / old_price) * 100)
-    
     # Build message
     message = f"🔥 *OFERTA IMPERDÍVEL* 🔥\n\n"
     message += f"📦 {escape_markdown(title)}\n\n"
     
     if old_price and old_price > new_price:
-        message += f"~~R$ {escape_markdown(f'{old_price:.2f}')}~~ ➡️ *R$ {escape_markdown(f'{new_price:.2f}')}*\n"
-        message += f"💰 *{discount}% OFF*\n\n"
+        message += f"~~R$ {escape_markdown(f'{old_price:.2f}')}~~ ➡️ *R$ {escape_markdown(f'{new_price:.2f}')}*\n\n"
     else:
         message += f"💵 *R$ {escape_markdown(f'{new_price:.2f}')}*\n\n"
     
