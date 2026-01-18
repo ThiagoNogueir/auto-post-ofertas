@@ -42,11 +42,12 @@ def get_stats():
         for deal in deals:
             # Try to calculate savings from title or assume 20% average
             # In a real scenario, you'd store old_price in the database
-            estimated_old_price = deal.price * 1.3  # Assume 30% discount average
-            savings = estimated_old_price - deal.price
+            price = float(deal.price)  # Convert Decimal to float
+            estimated_old_price = price * 1.3  # Assume 30% discount average
+            savings = estimated_old_price - price
             total_savings += savings
             
-            discount = ((estimated_old_price - deal.price) / estimated_old_price) * 100
+            discount = ((estimated_old_price - price) / estimated_old_price) * 100
             total_discount += discount
             count_with_discount += 1
         
@@ -86,15 +87,14 @@ def get_deals():
                 price = float(deal.price) if deal.price else 0.0
                 old_price = price * 1.3
                 
-                # Handle connection state/dates safely
+                # Handle dates - convert to ISO format
                 if deal.sent_at:
-                    # Ensure timezone awareness (assume UTC if naive)
-                    dt = deal.sent_at
-                    if dt.tzinfo is None:
-                        dt = dt.replace(tzinfo=timezone.utc)
-                    sent_at = dt.isoformat()
+                    try:
+                        sent_at = deal.sent_at.isoformat()
+                    except:
+                        sent_at = str(deal.sent_at)
                 else:
-                    sent_at = datetime.now(timezone.utc).isoformat()
+                    sent_at = datetime.now().isoformat()
                 
                 # Check config
                 debug_mode = os.getenv('DEBUG_MODE', 'True').lower() == 'true'
@@ -179,12 +179,19 @@ def update_settings():
         interval = data.get('interval')
         
         if interval:
-            try:
-                from src.utils.config_manager import set_interval
-            except ImportError:
-                from utils.config_manager import set_interval
-                
-            set_interval(int(interval))
+            import json
+            config_file = 'config.json'
+            
+            if os.path.exists(config_file):
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+            else:
+                config = {"interval_minutes": 30, "force_run": False}
+            
+            config['interval_minutes'] = int(interval)
+            
+            with open(config_file, 'w') as f:
+                json.dump(config, f, indent=4)
             return jsonify({'status': 'success', 'message': f'Interval updated to {interval} minutes'})
             
         return jsonify({'error': 'Missing interval parameter'}), 400
@@ -196,12 +203,19 @@ def update_settings():
 def trigger_run():
     """Force run the bot immediately."""
     try:
-        try:
-            from src.utils.config_manager import set_force_run
-        except ImportError:
-            from utils.config_manager import set_force_run
-            
-        set_force_run()
+        import json
+        config_file = 'config.json'
+        
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+        else:
+            config = {"interval_minutes": 30, "force_run": False}
+        
+        config['force_run'] = True
+        
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=4)
         return jsonify({'status': 'success', 'message': 'Job triggered successfully'})
     except Exception as e:
         print(f"Error in /trigger: {e}")
@@ -214,6 +228,42 @@ def clear_deals():
         query = Deal.delete()
         count = query.execute()
         return jsonify({'status': 'success', 'message': f'Deleted {count} deals'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/groups-config', methods=['GET'])
+def get_groups_config():
+    """Get groups configuration"""
+    try:
+        import json
+        config_file = 'groups_config.json'
+        
+        if os.path.exists(config_file):
+            with open(config_file, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+        else:
+            config = {
+                "telegram_groups": {"default": ""},
+                "whatsapp_groups": {"default": ""},
+                "category_routing": {"enabled": True, "send_to_telegram": True, "send_to_whatsapp": False}
+            }
+        
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/groups-config', methods=['POST'])
+def update_groups_config():
+    """Update groups configuration"""
+    try:
+        import json
+        config_file = 'groups_config.json'
+        data = request.json
+        
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return jsonify({'status': 'success', 'message': 'Configuration updated'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

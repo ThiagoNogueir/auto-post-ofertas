@@ -4,8 +4,15 @@ Handles deal storage and deduplication.
 """
 
 from peewee import *
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import os
+
+# Brazilian timezone (UTC-3)
+BRAZIL_TZ = timezone(timedelta(hours=-3))
+
+def get_brazil_time():
+    """Get current time in Brazilian timezone"""
+    return datetime.now(BRAZIL_TZ)
 
 # Ensure data directory exists
 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -45,7 +52,7 @@ class Deal(BaseModel):
     image_url = TextField(null=True)
     category = CharField(default='Outros')
     store = CharField(default='Outros')
-    sent_at = DateTimeField(default=datetime.now)
+    sent_at = DateTimeField(default=get_brazil_time)
     
     class Meta:
         table_name = 'deals'

@@ -102,9 +102,10 @@ def fetch_html_selenium(url: str) -> str:
         # DEBUG: Save HTML to file for inspection (TEMPORARY)
         if 'mercadolivre.com' in url:
             try:
-                with open('/app/logs/ml_debug.html', 'w', encoding='utf-8') as f:
+                debug_path = os.path.join('logs', 'ml_debug.html')
+                with open(debug_path, 'w', encoding='utf-8') as f:
                     f.write(html)
-                logger.info("Saved HTML to /app/logs/ml_debug.html for inspection")
+                logger.info(f"Saved HTML to {debug_path} for inspection")
             except Exception as e:
                 logger.warning(f"Could not save debug HTML: {e}")
         

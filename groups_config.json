@@ -1,0 +1,21 @@
+{
+    "telegram_groups": {
+        "default": "",
+        "Celulares": "",
+        "Eletrônicos": "",
+        "Informática": "",
+        "Casa": ""
+    },
+    "whatsapp_groups": {
+        "default": "",
+        "Celulares": "",
+        "Eletrônicos": "",
+        "Informática": "",
+        "Casa": ""
+    },
+    "category_routing": {
+        "enabled": true,
+        "send_to_telegram": true,
+        "send_to_whatsapp": false
+    }
+}
