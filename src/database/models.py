@@ -8,10 +8,13 @@ from datetime import datetime
 import os
 
 # Ensure data directory exists
-os.makedirs('data', exist_ok=True)
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+data_dir = os.path.join(base_dir, 'data')
+os.makedirs(data_dir, exist_ok=True)
 
 # Database connection
-db = SqliteDatabase('data/deals.db')
+db_path = os.path.join(data_dir, 'deals.db')
+db = SqliteDatabase(db_path)
 
 
 class BaseModel(Model):
