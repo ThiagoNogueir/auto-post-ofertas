@@ -12,12 +12,13 @@ from dotenv import load_dotenv
 
 from .database import init_database, is_deal_processed, save_deal
 from .database import init_database, is_deal_processed, save_deal
-from .services import validate_deal, send_deal, send_notification
+from .services import validate_deal, send_deal, send_notification, send_deal_to_whatsapp
+import json
+from .utils.helpers import extract_product_id
+
 from .services.parser import extract_deals_from_html
 from .services.simple_affiliate import generate_simple_link as generate_link
 from .utils.logger import logger
-
-# Load environment variables
 from .services.simple_scraper_selenium import fetch_html_selenium
 
 def fetch_raw_data(url: str) -> str:
@@ -25,7 +26,6 @@ def fetch_raw_data(url: str) -> str:
     Fetch raw HTML using Selenium to handle JS-heavy sites (Shopee).
     """
     return fetch_html_selenium(url)
-
 
 def process_deal(deal: Dict) -> bool:
     """
@@ -45,7 +45,7 @@ def process_deal(deal: Dict) -> bool:
         
         # Generate external ID from URL
         original_url = deal.get('original_url', '')
-        external_id = original_url.split('/')[-1].split('?')[0]
+        external_id = extract_product_id(original_url)
         
         if not external_id:
             logger.warning("Could not generate external_id, skipping deal")
@@ -67,30 +67,92 @@ def process_deal(deal: Dict) -> bool:
         deal['affiliate_url'] = affiliate_url
         
         # Determine store name
+        # Determine store name
         store_name = 'Outros'
         if 'mercadolivre.com' in original_url:
             store_name = 'Mercado Livre'
         elif 'shopee.com' in original_url:
             store_name = 'Shopee'
             
-        # Send to Telegram
-        if send_deal(deal):
-            # Save to database
-            save_deal(
-                external_id=external_id,
-                title=deal.get('title', ''),
-                price=float(deal.get('new_price', 0)),
-                original_url=original_url,
-                affiliate_url=affiliate_url,
-                image_url=deal.get('image_url'),
-                category=deal.get('category', 'Outros'),
-                store=store_name
-            )
-            logger.info(f"Deal processed successfully: {deal.get('title')}")
-            return True
-        else:
-            logger.error("Failed to send deal to Telegram")
-            return False
+        # --- Channel Routing Logic ---
+        
+        # Load config
+        groups_config = {}
+        try:
+            if os.path.exists('groups_config.json'):
+                with open('groups_config.json', 'r', encoding='utf-8') as f:
+                    groups_config = json.load(f)
+        except Exception as e:
+            logger.warning(f"Could not load groups_config.json: {e}")
+            
+        routing = groups_config.get('category_routing', {})
+        enabled = routing.get('enabled', False)
+        send_telegram = routing.get('send_to_telegram', True)
+        send_whatsapp = routing.get('send_to_whatsapp', False)
+        
+        category = deal.get('category', 'Outros')
+        
+        telegram_sent = False
+        whatsapp_sent = False
+        
+        # 1. Send to Telegram if enabled
+        if send_telegram:
+            tg_groups = groups_config.get('telegram_groups', {})
+            # Try specific category group, fallback to default
+            tg_chat_id = tg_groups.get(category, tg_groups.get('default'))
+            
+            # If empty in config JSON, send_deal will fallback to .env variable
+            # But let's log what we are doing
+            if tg_chat_id:
+                logger.info(f"Sending to Telegram Group: {tg_chat_id}")
+            else:
+                logger.info(f"Sending to Telegram Default (ENV)")
+
+            if send_deal(deal, target_chat_id=tg_chat_id):
+                telegram_sent = True
+        
+        # 2. Send to WhatsApp if enabled
+        if send_whatsapp:
+            logger.info(f"Attempting to send to WhatsApp (Category: {category})")
+            try:
+                wa_groups = groups_config.get('whatsapp_groups', {})
+                # Try specific category group, fallback to default
+                group_id = wa_groups.get(category, wa_groups.get('default'))
+                
+                if group_id:
+                    logger.info(f"Sending to WhatsApp Group: {group_id}")
+                    wa_result = send_deal_to_whatsapp(
+                        group_id=group_id,
+                        title=deal.get('title', ''),
+                        price=float(deal.get('new_price', 0)),
+                        old_price=float(deal.get('old_price', 0) or 0),
+                        url=affiliate_url,
+                        image_url=deal.get('image_url')
+                    )
+                    if wa_result:
+                        whatsapp_sent = True
+                        logger.info("WhatsApp send SUCCESS")
+                    else:
+                        logger.error("WhatsApp send FAILED (API returned False)")
+                else:
+                    logger.warning(f"No WhatsApp group configured for category '{category}' and no default")
+            except Exception as e:
+                logger.error(f"Error sending to WhatsApp: {e}")
+
+        # 3. Always save to database so we can see in dashboard
+        # But log the delivery status
+        save_deal(
+            external_id=external_id,
+            title=deal.get('title', ''),
+            price=float(deal.get('new_price', 0)),
+            original_url=original_url,
+            affiliate_url=affiliate_url,
+            image_url=deal.get('image_url'),
+            category=category,
+            store=store_name
+        )
+        logger.info(f"Deal saved to DB: {deal.get('title')} (TG: {telegram_sent}, WA: {whatsapp_sent})")
+        return True
             
     except Exception as e:
         logger.error(f"Error processing deal: {e}")
@@ -180,18 +242,8 @@ def main():
     send_notification("🤖 PromoBot started successfully!")
     
     # Start API in a separate thread (if not already running)
-    try:
-        import threading
-        from api.app import app
-        def run_api():
-            app.run(host='0.0.0.0', port=8000, use_reloader=False) # use_reloader=False is important for threads
-        
-        api_thread = threading.Thread(target=run_api)
-        api_thread.daemon = True
-        api_thread.start()
-        logger.info("API Server started on port 8000")
-    except Exception as e:
-        logger.error(f"Failed to start API thread: {e}")
+    # API Server is running separately via iniciar_bot.bat
+    # Logic removed to avoid port conflict (Address already in use)
 
     # Import config manager
     from src.utils.config_manager import should_run, update_last_run

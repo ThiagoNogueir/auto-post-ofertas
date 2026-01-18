@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost:5000';
 
 // Load configuration on page load
 document.addEventListener('DOMContentLoaded', () => {

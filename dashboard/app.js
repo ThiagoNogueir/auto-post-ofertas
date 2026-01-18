@@ -1,5 +1,5 @@
 // API Base URL
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost:5000';
 
 // Refresh data every 30 seconds
 let refreshInterval;

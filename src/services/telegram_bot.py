@@ -60,7 +60,7 @@ def format_deal_message(deal_data: Dict) -> str:
     return message
 
 
-def send_deal(deal_data: Dict) -> bool:
+def send_deal(deal_data: Dict, target_chat_id: Optional[str] = None) -> bool:
     """
     Send deal notification to Telegram.
     
@@ -69,6 +69,7 @@ def send_deal(deal_data: Dict) -> bool:
     
     Args:
         deal_data: Deal dictionary with title, price, image_url, affiliate_url, etc.
+        target_chat_id: Optional specific chat_id to send to. If None, uses env var.
         
     Returns:
         True if successful, False otherwise
@@ -78,7 +79,7 @@ def send_deal(deal_data: Dict) -> bool:
     
     if debug_mode:
         logger.info("=" * 50)
-        logger.info("DEBUG MODE: Deal would be sent to Telegram")
+        logger.info(f"DEBUG MODE: Deal would be sent to Telegram (ChatID: {target_chat_id or 'ENV'})")
         logger.info(f"Title: {deal_data.get('title')}")
         logger.info(f"Price: R$ {deal_data.get('new_price', 0):.2f}")
         logger.info(f"Old Price: R$ {deal_data.get('old_price', 0):.2f}")
@@ -90,7 +91,7 @@ def send_deal(deal_data: Dict) -> bool:
     # Production mode - send to Telegram
     try:
         bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
-        chat_id = os.getenv('TELEGRAM_CHAT_ID')
+        chat_id = target_chat_id or os.getenv('TELEGRAM_CHAT_ID')
         
         if not bot_token or not chat_id or bot_token == 'seu_token':
             logger.error("Telegram credentials not configured")

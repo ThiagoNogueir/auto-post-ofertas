@@ -1,21 +1,21 @@
 {
-    "telegram_groups": {
-        "default": "",
-        "Celulares": "",
-        "Eletrônicos": "",
-        "Informática": "",
-        "Casa": ""
-    },
-    "whatsapp_groups": {
-        "default": "",
-        "Celulares": "",
-        "Eletrônicos": "",
-        "Informática": "",
-        "Casa": ""
-    },
-    "category_routing": {
-        "enabled": true,
-        "send_to_telegram": true,
-        "send_to_whatsapp": false
-    }
+  "category_routing": {
+    "enabled": true,
+    "send_to_telegram": true,
+    "send_to_whatsapp": true
+  },
+  "telegram_groups": {
+    "default": "",
+    "Celulares": "",
+    "Eletrônicos": "",
+    "Informática": "",
+    "Casa": ""
+  },
+  "whatsapp_groups": {
+    "default": "120363422429816674@g.us",
+    "Celulares": "120363422429816674@g.us",
+    "Eletrônicos": "120363422429816674@g.us",
+    "Informática": "120363422429816674@g.us",
+    "Casa": "120363422429816674@g.us"
+  }
 }
