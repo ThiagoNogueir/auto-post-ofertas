@@ -18,7 +18,9 @@ def fetch_html_selenium(url: str) -> str:
         logger.info(f"Starting Selenium fetch for: {url}")
         
         chrome_options = Options()
-        chrome_options.binary_location = os.environ.get("CHROME_BIN", "/usr/bin/chromium")
+        chrome_bin = os.environ.get("CHROME_BIN")
+        if chrome_bin:
+            chrome_options.binary_location = chrome_bin
         chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
@@ -29,7 +31,10 @@ def fetch_html_selenium(url: str) -> str:
         chrome_options.add_experimental_option("useAutomationExtension", False)
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        service = Service(executable_path=os.environ.get("CHROMEDRIVER_PATH", "/usr/bin/chromedriver"))
+        if os.environ.get("CHROMEDRIVER_PATH"):
+            service = Service(executable_path=os.environ.get("CHROMEDRIVER_PATH"))
+        else:
+            service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=chrome_options)
         
         # Stealth: Remove navigator.webdriver flag
@@ -84,9 +89,13 @@ def fetch_html_selenium(url: str) -> str:
         # Additional wait for JS to finish rendering
         time.sleep(3)
         
-        # Scroll down to trigger lazy loading
-        driver.execute_script("window.scrollTo(0, 1000);")
-        time.sleep(3)  # Increased from 2 to 3
+        # Scroll down progressively to trigger ALL lazy loading
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 3);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 1.5);")
+        time.sleep(1)
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)
         
         html = driver.page_source
         
