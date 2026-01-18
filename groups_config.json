@@ -5,11 +5,11 @@
     "send_to_whatsapp": true
   },
   "telegram_groups": {
-    "default": "",
-    "Celulares": "",
-    "Eletrônicos": "",
-    "Informática": "",
-    "Casa": ""
+    "default": "-1003499671429",
+    "Celulares": "-1003499671429",
+    "Eletrônicos": "-1003499671429",
+    "Informática": "-1003499671429",
+    "Casa": "-1003499671429"
   },
   "whatsapp_groups": {
     "default": "120363422429816674@g.us",
