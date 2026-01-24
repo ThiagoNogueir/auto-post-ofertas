@@ -58,10 +58,13 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
         
         chrome_options = Options()
         
-        # Use temporary profile to avoid locks
-        import tempfile
-        temp_profile = tempfile.mkdtemp(prefix="ml_linkbuilder_")
-        chrome_options.add_argument(f"user-data-dir={temp_profile}")
+        # Use persistent profile directory for cookies
+        profile_dir = os.path.join(os.getcwd(), "ml_chrome_profile")
+        if not os.path.exists(profile_dir):
+            os.makedirs(profile_dir)
+            logger.info(f"Created profile directory: {profile_dir}")
+        
+        chrome_options.add_argument(f"user-data-dir={profile_dir}")
         
         # Stability arguments
         chrome_options.add_argument("--no-sandbox")
@@ -77,17 +80,10 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.set_page_load_timeout(timeout)
         
-        # Navigate to Link Builder
+        # Navigate directly to Link Builder (cookies are in the profile)
         logger.info("Navigating to Link Builder...")
         driver.get("https://www.mercadolivre.com.br/afiliados/linkbuilder")
-        time.sleep(2)
-        
-        # Try to load cookies
-        cookies_loaded = load_cookies(driver)
-        if cookies_loaded:
-            logger.info("Refreshing page with cookies...")
-            driver.refresh()
-            time.sleep(3)
+        time.sleep(5)
         
         # Check if login is required
         current_url = driver.current_url
@@ -111,19 +107,41 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
         # Now we should be on Link Builder page
         time.sleep(3)
         
-        # Find the textarea for URLs
+        # Find the textarea for URLs - be very specific
         logger.info("Looking for URL textarea...")
         url_input = None
         
         try:
+            # Wait for the page to fully load
+            time.sleep(2)
+            
+            # Find all textareas
             textareas = driver.find_elements(By.CSS_SELECTOR, "textarea")
-            for textarea in textareas:
-                if textarea.is_displayed() and textarea.is_enabled():
-                    parent_classes = textarea.get_attribute('class') or ''
-                    if 'nav-search' not in parent_classes:
+            logger.info(f"Found {len(textareas)} textarea elements")
+            
+            # Look for the one that's visible and in the main content area
+            for i, textarea in enumerate(textareas):
+                try:
+                    if textarea.is_displayed() and textarea.is_enabled():
+                        # Get placeholder or nearby text to identify the right one
+                        placeholder = textarea.get_attribute('placeholder') or ''
+                        aria_label = textarea.get_attribute('aria-label') or ''
+                        
+                        logger.info(f"Textarea {i}: placeholder='{placeholder}', aria-label='{aria_label}'")
+                        
+                        # Skip search bars and headers
+                        parent_classes = textarea.get_attribute('class') or ''
+                        if 'nav-search' in parent_classes or 'header' in parent_classes:
+                            continue
+                        
+                        # This should be the URL input textarea
                         url_input = textarea
-                        logger.info("Found URL textarea")
+                        logger.info(f"Selected textarea {i} as URL input")
                         break
+                except Exception as e:
+                    logger.warning(f"Error checking textarea {i}: {e}")
+                    continue
+                    
         except Exception as e:
             logger.error(f"Error finding textarea: {e}")
             return product_url
@@ -132,18 +150,34 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
             logger.error("Could not find URL textarea")
             return product_url
         
-        # Scroll and focus
-        driver.execute_script("arguments[0].scrollIntoView(true);", url_input)
-        time.sleep(1)
-        url_input.click()
-        time.sleep(1)
-        
-        # Enter URL
-        logger.info("Entering product URL...")
-        url_input.clear()
-        time.sleep(0.5)
-        url_input.send_keys(product_url)
-        time.sleep(1)
+        # Scroll to textarea and give it focus
+        try:
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", url_input)
+            time.sleep(1)
+            
+            # Click to focus
+            url_input.click()
+            time.sleep(1)
+            
+            # Clear any existing content
+            url_input.clear()
+            time.sleep(0.5)
+            
+            # Use JavaScript to set value as backup
+            driver.execute_script("arguments[0].value = '';", url_input)
+            time.sleep(0.5)
+            
+            logger.info("Entering product URL...")
+            url_input.send_keys(product_url)
+            time.sleep(2)
+            
+            # Verify it was entered
+            entered_value = url_input.get_attribute('value')
+            logger.info(f"Entered value length: {len(entered_value)} chars")
+            
+        except Exception as e:
+            logger.error(f"Error entering URL: {e}")
+            return product_url
         
         # Find and click "Gerar" button
         logger.info("Looking for 'Gerar' button...")
