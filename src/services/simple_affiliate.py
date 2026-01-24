@@ -5,43 +5,26 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 def generate_simple_link(url: str) -> str:
     """
-    Generates affiliate links by appending specific query parameters.
-    No scraping or external API calls involved for stability.
+    Generates affiliate links.
+    For Mercado Livre: Uses official Link Builder
+    For Shopee: Appends tracking parameters
     """
     try:
         parsed = urlparse(url)
-        params = parse_qs(parsed.query)
         
-        # Mercado Livre
+        # Mercado Livre - Use Link Builder
         if 'mercadolivre.com' in parsed.netloc:
-            # Mercado Livre uses encrypted /sec/ links usually, but we can try appending tracking IDs
-            ml_id = os.getenv('ML_AFFILIATE_ID')
-            if ml_id:
-                params['tracking_id'] = [ml_id]
-                params['matt_tool'] = ['my_bot'] # Identificador opcional
-                
-                # Rebuild URL
-                new_query = urlencode(params, doseq=True)
-                new_url = urlunparse((
-                    parsed.scheme,
-                    parsed.netloc,
-                    parsed.path,
-                    parsed.params,
-                    new_query,
-                    parsed.fragment
-                ))
-                return new_url
-            return url
+            from .ml_linkbuilder import generate_link_with_linkbuilder
+            return generate_link_with_linkbuilder(url)
             
         # Shopee
         elif 'shopee.com' in parsed.netloc:
+            params = parse_qs(parsed.query)
             shopee_id = os.getenv('SHOPEE_AFFILIATE_ID')
             if shopee_id:
-                # Add Shopee affiliate params if ID exists
                 params['af_id'] = [shopee_id]
                 params['utm_source'] = [shopee_id]
                 
-                # Rebuild URL
                 new_query = urlencode(params, doseq=True)
                 new_url = urlunparse((
                     parsed.scheme,

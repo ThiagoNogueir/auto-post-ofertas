@@ -170,14 +170,27 @@ def run_job():
     try:
         # Example URLs to monitor (you can make this configurable)
         # Monitor main offers AND specific categories for better deal finding
+        # Example URLs to monitor (you can make this configurable)
+        # Monitor main offers AND specific categories for better deal finding
         urls_to_monitor = [
-            # --- Mercado Livre  ---
-            "https://lista.mercadolivre.com.br/ofertas",
-            "https://lista.mercadolivre.com.br/celulares-telefones/_Discount_5-100", # Filtro de desconto ativo
-            "https://lista.mercadolivre.com.br/informatica/_Discount_5-100",
-            "https://lista.mercadolivre.com.br/games/_Discount_5-100",
+            # --- Mercado Livre (Categorias Solicitadas - Mais Vendidos) ---
             
-            # --- Shopee (Busca com filtro de desconto/relevancia) ---
+            # Tecnologia - Celulares
+            "https://lista.mercadolivre.com.br/celulares-telefones/_Orden_sold_quantity",
+            
+            # Tecnologia - Computadores
+            "https://lista.mercadolivre.com.br/computadores/_Orden_sold_quantity",
+            
+            # Esportes - Suplementos
+            "https://lista.mercadolivre.com.br/saude/suplementos-alimentares/_Orden_sold_quantity",
+            
+            # Pet Shop
+            "https://lista.mercadolivre.com.br/animais/_Orden_sold_quantity",
+            
+            # Moda
+            "https://lista.mercadolivre.com.br/calcados-roupas-bolsas/_Orden_sold_quantity",
+            
+            # --- Shopee (Mantendo busca por relevância) ---
             "https://shopee.com.br/search?keyword=celular&sortBy=sales",
             "https://shopee.com.br/search?keyword=notebook&sortBy=sales",
             "https://shopee.com.br/search?keyword=game&sortBy=sales",
@@ -186,29 +199,44 @@ def run_job():
         total_deals_found = 0
         total_deals_sent = 0
         
-        for url in urls_to_monitor:
-            logger.info(f"Processing URL: {url}")
-            
-            # 1. Fetch raw data
-            raw_data = fetch_raw_data(url)
-            if not raw_data:
-                logger.warning(f"No data fetched from {url}, skipping")
-                continue
-            
-            # 2. Extract deals using Parser (No AI)
-            deals = extract_deals_from_html(raw_data, url)
-            total_deals_found += len(deals)
-            
-            if not deals:
-                logger.info(f"No deals found in {url}")
-                continue
-            
-            # 3. Process each deal
-            for deal in deals:
-                if process_deal(deal):
-                    total_deals_sent += 1
-                    # Add delay between deals to avoid rate limiting
-                    time.sleep(2)
+        # Initialize Driver ONCE
+        from .services.simple_scraper_selenium import get_driver
+        logger.info("Initializing Single Chrome Driver...")
+        driver = get_driver()
+        
+        if not driver:
+            logger.error("Failed to initialize driver. Aborting job.")
+            return
+
+        try:
+            for url in urls_to_monitor:
+                logger.info(f"Processing URL: {url}")
+                
+                # 1. Fetch raw data (reusing driver)
+                raw_data = fetch_html_selenium(url, driver=driver)
+                
+                if not raw_data:
+                    logger.warning(f"No data fetched from {url}, skipping")
+                    continue
+                
+                # 2. Extract deals using Parser (No AI)
+                deals = extract_deals_from_html(raw_data, url)
+                total_deals_found += len(deals)
+                
+                if not deals:
+                    logger.info(f"No deals found in {url}")
+                    continue
+                
+                # 3. Process each deal
+                for deal in deals:
+                    if process_deal(deal):
+                        total_deals_sent += 1
+                        # Add delay between deals to avoid rate limiting
+                        time.sleep(2)
+        finally:
+            logger.info("Closing Chrome Driver...")
+            if driver:
+                driver.quit()
         
         logger.info("=" * 60)
         logger.info(f"Job completed: {total_deals_found} deals found, {total_deals_sent} sent")
