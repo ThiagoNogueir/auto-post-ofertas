@@ -48,3 +48,8 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+ml_linkbuilder_cookies.pkl
+
+# Chrome Profile
+ml_chrome_profile/
+

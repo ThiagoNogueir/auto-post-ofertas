@@ -64,6 +64,12 @@ def process_deal(deal: Dict) -> bool:
             logger.warning("Failed to generate affiliate link, using original URL")
             affiliate_url = original_url
         
+        # Validate HTTPS - Skip products without HTTPS
+        if not affiliate_url.startswith('https://'):
+            logger.warning(f"Product link does not use HTTPS, skipping: {deal.get('title')}")
+            logger.warning(f"URL: {affiliate_url}")
+            return False
+        
         deal['affiliate_url'] = affiliate_url
         
         # Determine store name

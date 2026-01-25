@@ -8,14 +8,21 @@ def generate_simple_link(url: str) -> str:
     Generates affiliate links.
     For Mercado Livre: Uses official Link Builder
     For Shopee: Appends tracking parameters
+    
+    Note: Only HTTPS links are accepted. HTTP links are converted to HTTPS.
     """
     try:
         parsed = urlparse(url)
         
+        # Force HTTPS - Convert HTTP to HTTPS
+        scheme = 'https' if parsed.scheme in ['http', 'https'] else parsed.scheme
+        
         # Mercado Livre - Use Link Builder
         if 'mercadolivre.com' in parsed.netloc:
             from .ml_linkbuilder import generate_link_with_linkbuilder
-            return generate_link_with_linkbuilder(url)
+            # Ensure input URL uses HTTPS
+            https_url = url.replace('http://', 'https://')
+            return generate_link_with_linkbuilder(https_url)
             
         # Shopee
         elif 'shopee.com' in parsed.netloc:
@@ -27,7 +34,7 @@ def generate_simple_link(url: str) -> str:
                 
                 new_query = urlencode(params, doseq=True)
                 new_url = urlunparse((
-                    parsed.scheme,
+                    scheme,  # Use HTTPS
                     parsed.netloc,
                     parsed.path,
                     parsed.params,
@@ -36,7 +43,16 @@ def generate_simple_link(url: str) -> str:
                 ))
                 return new_url
         
-        return url
+        # For other URLs, ensure HTTPS
+        final_url = urlunparse((
+            scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            parsed.query,
+            parsed.fragment
+        ))
+        return final_url
         
     except Exception as e:
         print(f"Error generating link: {e}")
