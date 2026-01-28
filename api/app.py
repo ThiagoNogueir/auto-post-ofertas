@@ -8,6 +8,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime, timezone
 import sys
+import json
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
@@ -265,6 +266,55 @@ def update_groups_config():
         
         return jsonify({'status': 'success', 'message': 'Configuration updated'})
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/urls', methods=['GET'])
+def get_urls():
+    """Get monitored URLs configuration."""
+    try:
+        urls_config_file = os.path.join(os.path.dirname(__file__), '..', 'urls_config.json')
+        
+        # Create file with defaults if it doesn't exist
+        if not os.path.exists(urls_config_file):
+            default_config = {
+                "urls_to_monitor": [
+                    "https://lista.mercadolivre.com.br/celulares-telefones/_Orden_sold_quantity",
+                    "https://lista.mercadolivre.com.br/computadores/_Orden_sold_quantity"
+                ]
+            }
+            with open(urls_config_file, 'w', encoding='utf-8') as f:
+                json.dump(default_config, f, indent=2, ensure_ascii=False)
+        
+        with open(urls_config_file, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/urls', methods=['POST'])
+def update_urls():
+    """Update monitored URLs configuration."""
+    try:
+        # Use absolute path
+        urls_config_file = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'urls_config.json'))
+        data = request.json
+        
+        print(f"Saving URLs to: {urls_config_file}")
+        print(f"Data received: {data}")
+        
+        # Validate data
+        if not data or 'urls_to_monitor' not in data:
+            return jsonify({'error': 'Invalid data format'}), 400
+        
+        with open(urls_config_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        print(f"URLs saved successfully!")
+        return jsonify({'status': 'success', 'message': 'URLs updated successfully'})
+    except Exception as e:
+        print(f"Error saving URLs: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

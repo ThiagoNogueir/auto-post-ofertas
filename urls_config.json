@@ -1,0 +1,10 @@
+{
+  "urls_to_monitor": [
+    "https://lista.mercadolivre.com.br/celulares-telefones/_Orden_sold_quantity",
+    "https://lista.mercadolivre.com.br/computadores/_Orden_sold_quantity",
+    "https://lista.mercadolivre.com.br/saude/suplementos-alimentares/_Orden_sold_quantity",
+    "https://lista.mercadolivre.com.br/animais/_Orden_sold_quantity",
+    "https://lista.mercadolivre.com.br/calcados-roupas-bolsas/_Orden_sold_quantity",
+    "https://www.mercadolivre.com.br/ofertas?cat=MLB1144&category=MLB1144#c_container_id=MLB779362-1&c_element_id=20e86563-faf8-11f0-87d5-bb8b928f159b&deal_print_id=20c65e70-faf8-11f0-8e4d-05d3d1320f81&c_tracking_id=20c65e70-faf8-11f0-8e4d-05d3d1320f81"
+  ]
+}

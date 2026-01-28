@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar URLs - PromoBot</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .url-manager {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .url-list {
+            margin-top: 30px;
+        }
+        
+        .url-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .url-item input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .url-item input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .url-item button {
+            padding: 12px 20px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .url-item button:hover {
+            background: #d32f2f;
+        }
+        
+        .add-url-btn {
+            padding: 12px 24px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        .add-url-btn:hover {
+            background: #45a049;
+        }
+        
+        .save-btn {
+            padding: 15px 40px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            margin-top: 30px;
+            transition: background 0.3s;
+        }
+        
+        .save-btn:hover {
+            background: #1976D2;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .url-examples {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+        
+        .url-examples h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .url-examples ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .url-examples li {
+            padding: 8px 0;
+            font-size: 13px;
+            color: #666;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="url-manager">
+        <a href="index.html" class="back-link">← Voltar ao Dashboard</a>
+        
+        <h1>🔗 Gerenciar URLs Monitoradas</h1>
+        <p>Configure quais páginas o bot deve monitorar para encontrar ofertas.</p>
+        
+        <div id="alert-container"></div>
+        
+        <div class="url-list" id="url-list">
+            <!-- URLs will be loaded here -->
+        </div>
+        
+        <button class="add-url-btn" onclick="addUrlField()">+ Adicionar Nova URL</button>
+        <br>
+        <button class="save-btn" onclick="saveUrls()">💾 Salvar Configurações</button>
+        
+        <div class="url-examples">
+            <h3>📝 Exemplos de URLs:</h3>
+            <ul>
+                <li><strong>Mercado Livre (Mais Vendidos):</strong><br>
+                    https://lista.mercadolivre.com.br/celulares-telefones/_Orden_sold_quantity</li>
+                <li><strong>Mercado Livre (Ofertas do Dia):</strong><br>
+                    https://www.mercadolivre.com.br/ofertas</li>
+                <li><strong>Shopee (Mais Vendidos):</strong><br>
+                    https://shopee.com.br/search?keyword=celular&sortBy=sales</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        
+        // Load URLs on page load
+        window.addEventListener('DOMContentLoaded', loadUrls);
+        
+        async function loadUrls() {
+            try {
+                const response = await fetch(`${API_URL}/api/urls`);
+                const data = await response.json();
+                
+                const urlList = document.getElementById('url-list');
+                urlList.innerHTML = '';
+                
+                if (data.urls_to_monitor && data.urls_to_monitor.length > 0) {
+                    data.urls_to_monitor.forEach(url => {
+                        addUrlField(url);
+                    });
+                } else {
+                    addUrlField();
+                }
+            } catch (error) {
+                showAlert('Erro ao carregar URLs: ' + error.message, 'error');
+            }
+        }
+        
+        function addUrlField(url = '') {
+            const urlList = document.getElementById('url-list');
+            const urlItem = document.createElement('div');
+            urlItem.className = 'url-item';
+            urlItem.innerHTML = `
+                <input type="url" placeholder="https://lista.mercadolivre.com.br/..." value="${url}" class="url-input">
+                <button onclick="removeUrlField(this)">🗑️ Remover</button>
+            `;
+            urlList.appendChild(urlItem);
+        }
+        
+        function removeUrlField(button) {
+            button.parentElement.remove();
+        }
+        
+        async function saveUrls() {
+            const inputs = document.querySelectorAll('.url-input');
+            const urls = Array.from(inputs)
+                .map(input => input.value.trim())
+                .filter(url => url !== '');
+            
+            if (urls.length === 0) {
+                showAlert('Adicione pelo menos uma URL!', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/urls`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        urls_to_monitor: urls
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showAlert('✅ URLs salvas com sucesso! Reinicie o bot para aplicar as mudanças.', 'success');
+                } else {
+                    showAlert('Erro ao salvar: ' + (data.error || 'Erro desconhecido'), 'error');
+                }
+            } catch (error) {
+                showAlert('Erro ao salvar URLs: ' + error.message, 'error');
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${message}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

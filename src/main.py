@@ -174,33 +174,39 @@ def run_job():
     logger.info("=" * 60)
     
     try:
-        # Example URLs to monitor (you can make this configurable)
-        # Monitor main offers AND specific categories for better deal finding
-        # Example URLs to monitor (you can make this configurable)
-        # Monitor main offers AND specific categories for better deal finding
-        urls_to_monitor = [
-            # --- Mercado Livre (Categorias Solicitadas - Mais Vendidos) ---
-            
-            # Tecnologia - Celulares
-            "https://lista.mercadolivre.com.br/celulares-telefones/_Orden_sold_quantity",
-            
-            # Tecnologia - Computadores
-            "https://lista.mercadolivre.com.br/computadores/_Orden_sold_quantity",
-            
-            # Esportes - Suplementos
-            "https://lista.mercadolivre.com.br/saude/suplementos-alimentares/_Orden_sold_quantity",
-            
-            # Pet Shop
-            "https://lista.mercadolivre.com.br/animais/_Orden_sold_quantity",
-            
-            # Moda
-            "https://lista.mercadolivre.com.br/calcados-roupas-bolsas/_Orden_sold_quantity",
-            
-            # --- Shopee (Mantendo busca por relevância) ---
-            "https://shopee.com.br/search?keyword=celular&sortBy=sales",
-            "https://shopee.com.br/search?keyword=notebook&sortBy=sales",
-            "https://shopee.com.br/search?keyword=game&sortBy=sales",
-        ]
+        # Load URLs from config file
+        urls_config_path = os.path.join(os.path.dirname(__file__), '..', 'urls_config.json')
+        urls_to_monitor = []
+        
+        try:
+            if os.path.exists(urls_config_path):
+                with open(urls_config_path, 'r', encoding='utf-8') as f:
+                    urls_config = json.load(f)
+                    urls_to_monitor = urls_config.get('urls_to_monitor', [])
+                    
+                    # Filter out empty strings
+                    urls_to_monitor = [url for url in urls_to_monitor if url and url.strip()]
+                    
+                    if urls_to_monitor:
+                        logger.info(f"Loaded {len(urls_to_monitor)} URLs from config")
+                    else:
+                        logger.warning("Config file exists but has no valid URLs")
+            else:
+                logger.warning("URLs config file not found")
+                
+        except Exception as e:
+            logger.error(f"Error loading URLs config: {e}")
+        
+        # Fallback to default URLs if none loaded
+        if not urls_to_monitor:
+            urls_to_monitor = [
+                "https://lista.mercadolivre.com.br/celulares-telefones/_Orden_sold_quantity",
+                "https://lista.mercadolivre.com.br/computadores/_Orden_sold_quantity",
+                "https://lista.mercadolivre.com.br/saude/suplementos-alimentares/_Orden_sold_quantity",
+                "https://lista.mercadolivre.com.br/animais/_Orden_sold_quantity",
+                "https://lista.mercadolivre.com.br/calcados-roupas-bolsas/_Orden_sold_quantity"
+            ]
+            logger.warning(f"Using fallback URLs: {len(urls_to_monitor)} URLs")
         
         total_deals_found = 0
         total_deals_sent = 0
