@@ -4,9 +4,11 @@ Bot inteligente para monitoramento automático de ofertas no Mercado Livre e Sho
 
 ## ✨ Funcionalidades
 
-- 🔍 **Scraping Automatizado**: Monitora categorias específicas do Mercado Livre
+- 🔍 **Scraping Automatizado**: Monitora categorias específicas do Mercado Livre e Shopee
 - 🤖 **Processamento com IA**: Usa Groq AI para analisar e categorizar ofertas
-- 🔗 **Links de Afiliado Oficiais**: Gera links usando o Link Builder do Mercado Livre
+- 🔗 **Links de Afiliado Oficiais**: 
+  - **Mercado Livre**: Gera links usando o Link Builder oficial do ML
+  - **Shopee**: Gera links usando o Link Builder oficial da Shopee
 - 📱 **Telegram**: Envio automático para grupos/canais configuráveis
 - 💬 **WhatsApp**: Integração via Evolution API
 - 🔄 **Encurtador de Links**: URLs compactas via is.gd
@@ -87,17 +89,63 @@ python -m src.main
 
 ### Primeira Execução - Login no Mercado Livre
 
-Na primeira vez que o bot gerar um link de afiliado:
+Na primeira vez que o bot gerar um link de afiliado do ML:
 1. O Chrome vai abrir automaticamente
 2. Faça login na sua conta do Mercado Livre
 3. O bot vai salvar os cookies
 4. Nas próximas execuções, não precisará fazer login novamente
 
+### Primeira Execução - Login na Shopee
+
+Na primeira vez que o bot gerar um link de afiliado da Shopee:
+1. O Chrome vai abrir automaticamente
+2. Faça login na sua conta de afiliado da Shopee
+3. O bot vai salvar os cookies
+4. Nas próximas execuções, não precisará fazer login novamente
+
 ### Testar Geração de Links
 
+**Mercado Livre:**
 ```bash
 python test_linkbuilder.py
 ```
+
+**Shopee:**
+```bash
+python test_shopee_linkbuilder.py
+```
+
+### Configurar Grupos Específicos (Shopee)
+
+Você pode configurar grupos diferentes para produtos da Shopee via Dashboard:
+
+1. Acesse `http://localhost:5000/config.html`
+2. Configure em **"🛍️ Grupos Shopee - Telegram"** e **"🛍️ Grupos Shopee - WhatsApp"**
+3. Salve as configurações
+
+**Hierarquia de grupos para Shopee:**
+- `Shopee_Categoria` (ex: `Shopee_Celulares`) → Grupo específico Shopee
+- `Shopee_Default` → Grupo padrão Shopee
+- `Categoria` → Grupo geral da categoria
+- `default` → Grupo padrão geral
+
+**Exemplo:**
+```json
+{
+  "telegram_groups": {
+    "default": "-1001111111111",
+    "Celulares": "-1002222222222",
+    "Shopee_Default": "-1003333333333",
+    "Shopee_Celulares": "-1004444444444"
+  }
+}
+```
+
+Resultado:
+- Celular ML → Grupo `-1002222222222`
+- Celular Shopee → Grupo `-1004444444444`
+- Outros Shopee → Grupo `-1003333333333`
+
 
 ## 📁 Estrutura do Projeto
 
@@ -110,8 +158,9 @@ auto-post-ofertas/
 │   │   ├── ai_processor.py     # Processamento com Groq AI
 │   │   ├── evolution_api.py    # WhatsApp via Evolution API
 │   │   ├── ml_linkbuilder.py   # Gerador de links ML oficial
+│   │   ├── shopee_linkbuilder.py  # Gerador de links Shopee oficial
 │   │   ├── parser.py           # Parser de produtos
-│   │   ├── simple_affiliate.py # Gerenciador de afiliados
+│   │   ├── simple_affiliate.py # Gerenciador de afiliados (roteador)
 │   │   ├── simple_scraper_selenium.py  # Scraper Selenium
 │   │   └── telegram_bot.py     # Bot do Telegram
 │   └── utils/
@@ -121,7 +170,10 @@ auto-post-ofertas/
 ├── dashboard/                  # Dashboard web
 ├── .env                        # Variáveis de ambiente
 ├── groups_config.json          # Configuração de grupos
-├── ml_linkbuilder_cookies.pkl  # Cookies salvos (gerado automaticamente)
+├── ml_linkbuilder_cookies.pkl  # Cookies ML (gerado automaticamente)
+├── shopee_linkbuilder_cookies.pkl  # Cookies Shopee (gerado automaticamente)
+├── test_linkbuilder.py         # Teste do Link Builder ML
+├── test_shopee_linkbuilder.py  # Teste do Link Builder Shopee
 └── requirements.txt            # Dependências Python
 ```
 
@@ -162,18 +214,21 @@ schedule.every(30).minutes.do(run_job)
 
 ## 📝 Como Funciona
 
-1. **Scraping**: O bot acessa as páginas do Mercado Livre usando Selenium
+1. **Scraping**: O bot acessa as páginas do Mercado Livre e Shopee usando Selenium
 2. **Parsing**: Extrai informações dos produtos (título, preço, imagem, etc)
 3. **IA**: Processa com Groq AI para categorizar e melhorar descrições
-4. **Link de Afiliado**: Usa o Link Builder oficial do ML para gerar links rastreáveis
+4. **Link de Afiliado**: 
+   - **Mercado Livre**: Usa o Link Builder oficial do ML para gerar links rastreáveis
+   - **Shopee**: Usa o Link Builder oficial da Shopee para gerar links rastreáveis
 5. **Encurtamento**: Encurta o link usando is.gd
 6. **Verificação**: Checa no banco de dados se já foi enviado
-7. **Envio**: Envia para Telegram e/WhatsApp conforme configuração
+7. **Envio**: Envia para Telegram e/ou WhatsApp conforme configuração
 
 ## 🔐 Segurança
 
 - Nunca compartilhe seu arquivo `.env`
 - Os cookies do ML são salvos localmente em `ml_linkbuilder_cookies.pkl`
+- Os cookies da Shopee são salvos localmente em `shopee_linkbuilder_cookies.pkl`
 - Mantenha suas chaves de API seguras
 
 ## 📊 Dashboard

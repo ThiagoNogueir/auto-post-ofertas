@@ -104,26 +104,55 @@ def process_deal(deal: Dict) -> bool:
         # 1. Send to Telegram if enabled
         if send_telegram:
             tg_groups = groups_config.get('telegram_groups', {})
-            # Try specific category group, fallback to default
-            tg_chat_id = tg_groups.get(category, tg_groups.get('default'))
             
-            # If empty in config JSON, send_deal will fallback to .env variable
-            # But let's log what we are doing
-            if tg_chat_id:
-                logger.info(f"Sending to Telegram Group: {tg_chat_id}")
+            # For Shopee products, try Shopee-specific groups first
+            if store_name == 'Shopee':
+                # Try Shopee_Category format first (e.g., Shopee_Celulares)
+                shopee_category_key = f'Shopee_{category}'
+                tg_chat_id = tg_groups.get(shopee_category_key)
+                
+                # If not found, try Shopee_Default
+                if not tg_chat_id:
+                    tg_chat_id = tg_groups.get('Shopee_Default')
+                
+                # If still not found, fallback to general category
+                if not tg_chat_id:
+                    tg_chat_id = tg_groups.get(category, tg_groups.get('default'))
+                    
+                logger.info(f"Shopee product - Using Telegram group: {tg_chat_id or 'ENV default'}")
             else:
-                logger.info(f"Sending to Telegram Default (ENV)")
+                # For non-Shopee (ML, etc), use general category groups
+                tg_chat_id = tg_groups.get(category, tg_groups.get('default'))
+                logger.info(f"{store_name} product - Using Telegram group: {tg_chat_id or 'ENV default'}")
 
             if send_deal(deal, target_chat_id=tg_chat_id):
                 telegram_sent = True
         
         # 2. Send to WhatsApp if enabled
         if send_whatsapp:
-            logger.info(f"Attempting to send to WhatsApp (Category: {category})")
+            logger.info(f"Attempting to send to WhatsApp (Store: {store_name}, Category: {category})")
             try:
                 wa_groups = groups_config.get('whatsapp_groups', {})
-                # Try specific category group, fallback to default
-                group_id = wa_groups.get(category, wa_groups.get('default'))
+                
+                # For Shopee products, try Shopee-specific groups first
+                if store_name == 'Shopee':
+                    # Try Shopee_Category format first (e.g., Shopee_Celulares)
+                    shopee_category_key = f'Shopee_{category}'
+                    group_id = wa_groups.get(shopee_category_key)
+                    
+                    # If not found, try Shopee_Default
+                    if not group_id:
+                        group_id = wa_groups.get('Shopee_Default')
+                    
+                    # If still not found, fallback to general category
+                    if not group_id:
+                        group_id = wa_groups.get(category, wa_groups.get('default'))
+                        
+                    logger.info(f"Shopee product - Using WhatsApp group: {group_id or 'none'}")
+                else:
+                    # For non-Shopee (ML, etc), use general category groups
+                    group_id = wa_groups.get(category, wa_groups.get('default'))
+                    logger.info(f"{store_name} product - Using WhatsApp group: {group_id or 'none'}")
                 
                 if group_id:
                     logger.info(f"Sending to WhatsApp Group: {group_id}")
@@ -141,7 +170,7 @@ def process_deal(deal: Dict) -> bool:
                     else:
                         logger.error("WhatsApp send FAILED (API returned False)")
                 else:
-                    logger.warning(f"No WhatsApp group configured for category '{category}' and no default")
+                    logger.warning(f"No WhatsApp group configured for {store_name} - {category}")
             except Exception as e:
                 logger.error(f"Error sending to WhatsApp: {e}")
 

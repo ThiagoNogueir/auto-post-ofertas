@@ -15,19 +15,31 @@ async function loadConfig() {
         document.getElementById('send-telegram').checked = config.category_routing?.send_to_telegram || false;
         document.getElementById('send-whatsapp').checked = config.category_routing?.send_to_whatsapp || false;
 
-        // Telegram groups
+        // Telegram groups - General
         document.getElementById('telegram-default').value = config.telegram_groups?.default || '';
         document.getElementById('telegram-celulares').value = config.telegram_groups?.Celulares || '';
         document.getElementById('telegram-eletronicos').value = config.telegram_groups?.Eletrônicos || '';
         document.getElementById('telegram-informatica').value = config.telegram_groups?.Informática || '';
         document.getElementById('telegram-casa').value = config.telegram_groups?.Casa || '';
 
-        // WhatsApp groups
+        // Telegram groups - Shopee
+        document.getElementById('telegram-shopee-default').value = config.telegram_groups?.['Shopee_Default'] || '';
+        document.getElementById('telegram-shopee-celulares').value = config.telegram_groups?.['Shopee_Celulares'] || '';
+        document.getElementById('telegram-shopee-eletronicos').value = config.telegram_groups?.['Shopee_Eletrônicos'] || '';
+        document.getElementById('telegram-shopee-flashsale').value = config.telegram_groups?.['Shopee_FlashSale'] || '';
+
+        // WhatsApp groups - General
         document.getElementById('whatsapp-default').value = config.whatsapp_groups?.default || '';
         document.getElementById('whatsapp-celulares').value = config.whatsapp_groups?.Celulares || '';
         document.getElementById('whatsapp-eletronicos').value = config.whatsapp_groups?.Eletrônicos || '';
         document.getElementById('whatsapp-informatica').value = config.whatsapp_groups?.Informática || '';
         document.getElementById('whatsapp-casa').value = config.whatsapp_groups?.Casa || '';
+
+        // WhatsApp groups - Shopee
+        document.getElementById('whatsapp-shopee-default').value = config.whatsapp_groups?.['Shopee_Default'] || '';
+        document.getElementById('whatsapp-shopee-celulares').value = config.whatsapp_groups?.['Shopee_Celulares'] || '';
+        document.getElementById('whatsapp-shopee-eletronicos').value = config.whatsapp_groups?.['Shopee_Eletrônicos'] || '';
+        document.getElementById('whatsapp-shopee-flashsale').value = config.whatsapp_groups?.['Shopee_FlashSale'] || '';
 
     } catch (error) {
         console.error('Error loading config:', error);
@@ -48,14 +60,24 @@ async function saveConfig() {
                 Celulares: document.getElementById('telegram-celulares').value,
                 Eletrônicos: document.getElementById('telegram-eletronicos').value,
                 Informática: document.getElementById('telegram-informatica').value,
-                Casa: document.getElementById('telegram-casa').value
+                Casa: document.getElementById('telegram-casa').value,
+                // Shopee groups
+                Shopee_Default: document.getElementById('telegram-shopee-default').value,
+                Shopee_Celulares: document.getElementById('telegram-shopee-celulares').value,
+                Shopee_Eletrônicos: document.getElementById('telegram-shopee-eletronicos').value,
+                Shopee_FlashSale: document.getElementById('telegram-shopee-flashsale').value
             },
             whatsapp_groups: {
                 default: document.getElementById('whatsapp-default').value,
                 Celulares: document.getElementById('whatsapp-celulares').value,
                 Eletrônicos: document.getElementById('whatsapp-eletronicos').value,
                 Informática: document.getElementById('whatsapp-informatica').value,
-                Casa: document.getElementById('whatsapp-casa').value
+                Casa: document.getElementById('whatsapp-casa').value,
+                // Shopee groups
+                Shopee_Default: document.getElementById('whatsapp-shopee-default').value,
+                Shopee_Celulares: document.getElementById('whatsapp-shopee-celulares').value,
+                Shopee_Eletrônicos: document.getElementById('whatsapp-shopee-eletronicos').value,
+                Shopee_FlashSale: document.getElementById('whatsapp-shopee-flashsale').value
             }
         };
 

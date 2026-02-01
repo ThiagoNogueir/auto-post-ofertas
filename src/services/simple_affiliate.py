@@ -5,9 +5,9 @@ from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 def generate_simple_link(url: str) -> str:
     """
-    Generates affiliate links.
-    For Mercado Livre: Uses official Link Builder
-    For Shopee: Appends tracking parameters
+    Generates affiliate links using official Link Builders.
+    For Mercado Livre: Uses ML official Link Builder
+    For Shopee: Uses Shopee official Link Builder
     
     Note: Only HTTPS links are accepted. HTTP links are converted to HTTPS.
     """
@@ -17,31 +17,19 @@ def generate_simple_link(url: str) -> str:
         # Force HTTPS - Convert HTTP to HTTPS
         scheme = 'https' if parsed.scheme in ['http', 'https'] else parsed.scheme
         
-        # Mercado Livre - Use Link Builder
+        # Mercado Livre - Use ML Link Builder
         if 'mercadolivre.com' in parsed.netloc:
             from .ml_linkbuilder import generate_link_with_linkbuilder
             # Ensure input URL uses HTTPS
             https_url = url.replace('http://', 'https://')
             return generate_link_with_linkbuilder(https_url)
             
-        # Shopee
+        # Shopee - Use Shopee Link Builder
         elif 'shopee.com' in parsed.netloc:
-            params = parse_qs(parsed.query)
-            shopee_id = os.getenv('SHOPEE_AFFILIATE_ID')
-            if shopee_id:
-                params['af_id'] = [shopee_id]
-                params['utm_source'] = [shopee_id]
-                
-                new_query = urlencode(params, doseq=True)
-                new_url = urlunparse((
-                    scheme,  # Use HTTPS
-                    parsed.netloc,
-                    parsed.path,
-                    parsed.params,
-                    new_query,
-                    parsed.fragment
-                ))
-                return new_url
+            from .shopee_linkbuilder import generate_shopee_affiliate_link
+            # Ensure input URL uses HTTPS
+            https_url = url.replace('http://', 'https://')
+            return generate_shopee_affiliate_link(https_url)
         
         # For other URLs, ensure HTTPS
         final_url = urlunparse((

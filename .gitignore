@@ -48,8 +48,11 @@ data/
 # OS
 .DS_Store
 Thumbs.db
-ml_linkbuilder_cookies.pkl
 
-# Chrome Profile
+# Mercado Livre
+ml_linkbuilder_cookies.pkl
 ml_chrome_profile/
 
+# Shopee
+shopee_linkbuilder_cookies.pkl
+shopee_chrome_profile/
