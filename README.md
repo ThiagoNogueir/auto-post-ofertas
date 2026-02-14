@@ -9,6 +9,11 @@ Bot inteligente para monitoramento automático de ofertas no Mercado Livre e Sho
 - 🔗 **Links de Afiliado Oficiais**: 
   - **Mercado Livre**: Gera links usando o Link Builder oficial do ML
   - **Shopee**: Gera links usando o Link Builder oficial da Shopee
+- 🎟️ **Sistema de Cupons ML**: Geração automática de cupons de desconto para Mercado Livre
+  - Cupons únicos por produto
+  - Rastreamento em banco de dados
+  - Configuração de desconto por categoria
+  - Integração automática com links de afiliado
 - 📱 **Telegram**: Envio automático para grupos/canais configuráveis
 - 💬 **WhatsApp**: Integração via Evolution API
 - 🔄 **Encurtador de Links**: URLs compactas via is.gd
@@ -158,6 +163,7 @@ auto-post-ofertas/
 │   │   ├── ai_processor.py     # Processamento com Groq AI
 │   │   ├── evolution_api.py    # WhatsApp via Evolution API
 │   │   ├── ml_linkbuilder.py   # Gerador de links ML oficial
+│   │   ├── ml_coupon_generator.py  # Gerador de cupons ML
 │   │   ├── shopee_linkbuilder.py  # Gerador de links Shopee oficial
 │   │   ├── parser.py           # Parser de produtos
 │   │   ├── simple_affiliate.py # Gerenciador de afiliados (roteador)
@@ -170,9 +176,11 @@ auto-post-ofertas/
 ├── dashboard/                  # Dashboard web
 ├── .env                        # Variáveis de ambiente
 ├── groups_config.json          # Configuração de grupos
+├── coupon_config.json          # Configuração de cupons
 ├── ml_linkbuilder_cookies.pkl  # Cookies ML (gerado automaticamente)
 ├── shopee_linkbuilder_cookies.pkl  # Cookies Shopee (gerado automaticamente)
 ├── test_linkbuilder.py         # Teste do Link Builder ML
+├── test_coupon_generator.py    # Teste do gerador de cupons
 ├── test_shopee_linkbuilder.py  # Teste do Link Builder Shopee
 └── requirements.txt            # Dependências Python
 ```
@@ -201,6 +209,71 @@ Por padrão, o bot executa a cada 30 minutos. Para alterar, edite em `src/main.p
 schedule.every(30).minutes.do(run_job)
 ```
 
+### 🎟️ Sistema de Cupons (Mercado Livre)
+
+O bot pode gerar automaticamente cupons de desconto para produtos do Mercado Livre, aumentando a atratividade das ofertas.
+
+#### Configuração de Cupons
+
+Edite `coupon_config.json` para configurar o sistema de cupons:
+
+```json
+{
+  "enabled": true,
+  "default_discount_percentage": 5,
+  "coupon_prefix": "PROMO",
+  "max_coupons_per_day": 50,
+  "coupon_expiry_days": 30,
+  "categories": {
+    "Celulares": {
+      "discount_percentage": 10,
+      "enabled": true
+    },
+    "Eletrônicos": {
+      "discount_percentage": 8,
+      "enabled": true
+    }
+  }
+}
+```
+
+**Parâmetros:**
+- `enabled`: Ativa/desativa o sistema de cupons
+- `default_discount_percentage`: Desconto padrão (%)
+- `coupon_prefix`: Prefixo dos códigos de cupom
+- `max_coupons_per_day`: Limite diário de cupons
+- `coupon_expiry_days`: Validade dos cupons em dias
+- `categories`: Configuração específica por categoria
+
+#### Como Funciona
+
+1. **Geração Automática**: O bot gera um código único para cada produto (ex: `PROMO_20260214_A3F2`)
+2. **Rastreamento**: Cupons são salvos no banco de dados para evitar duplicatas
+3. **Integração**: Cupons são automaticamente adicionados aos links de afiliado
+4. **Notificação**: Código do cupom é incluído nas mensagens do Telegram/WhatsApp
+
+#### Testar Geração de Cupons
+
+```bash
+python test_coupon_generator.py
+```
+
+**Exemplo de Mensagem com Cupom:**
+```
+🔥 OFERTA IMPERDÍVEL 🔥
+
+📦 Smartphone XYZ 128GB
+
+~~R$ 1.999,00~~ ➡️ R$ 1.499,00
+
+🎟️ CUPOM: PROMO_20260214_A3F2
+💰 Desconto Extra: 10%
+
+🔗 Clique aqui para comprar
+```
+
+> **⚠️ Nota Importante**: Atualmente, a criação de cupons na interface do Mercado Livre requer configuração manual. O sistema gera os códigos únicos e os rastreia no banco de dados, mas você precisará criar os cupons manualmente em: https://www.mercadolivre.com.br/afiliados/coupons#hub
+
 ## 🛠️ Tecnologias Utilizadas
 
 - **Python 3.8+**
@@ -220,9 +293,10 @@ schedule.every(30).minutes.do(run_job)
 4. **Link de Afiliado**: 
    - **Mercado Livre**: Usa o Link Builder oficial do ML para gerar links rastreáveis
    - **Shopee**: Usa o Link Builder oficial da Shopee para gerar links rastreáveis
-5. **Encurtamento**: Encurta o link usando is.gd
-6. **Verificação**: Checa no banco de dados se já foi enviado
-7. **Envio**: Envia para Telegram e/ou WhatsApp conforme configuração
+5. **Cupons (ML)**: Gera/recupera cupom de desconto único para o produto
+6. **Encurtamento**: Encurta o link usando is.gd
+7. **Verificação**: Checa no banco de dados se já foi enviado
+8. **Envio**: Envia para Telegram e/ou WhatsApp conforme configuração
 
 ## 🔐 Segurança
 

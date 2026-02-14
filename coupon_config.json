@@ -1,0 +1,30 @@
+{
+    "enabled": true,
+    "friendly_names": true,
+    "default_discount_percentage": 5,
+    "coupon_prefix": "PROMO",
+    "max_coupons_per_day": 50,
+    "coupon_expiry_days": 30,
+    "categories": {
+        "Celulares": {
+            "discount_percentage": 10,
+            "enabled": true
+        },
+        "Eletrônicos": {
+            "discount_percentage": 8,
+            "enabled": true
+        },
+        "Computadores": {
+            "discount_percentage": 8,
+            "enabled": true
+        },
+        "Suplementos": {
+            "discount_percentage": 5,
+            "enabled": true
+        },
+        "Outros": {
+            "discount_percentage": 5,
+            "enabled": true
+        }
+    }
+}

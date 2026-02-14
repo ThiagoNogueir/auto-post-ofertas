@@ -33,20 +33,30 @@ def format_deal_message(deal_data: Dict) -> str:
     old_price = deal_data.get('old_price', 0)
     new_price = deal_data.get('new_price', 0)
     affiliate_url = deal_data.get('affiliate_url', deal_data.get('original_url', ''))
+    coupon_code = deal_data.get('coupon_code')
+    coupon_discount = deal_data.get('coupon_discount')
     
     # Shorten URL
     short_url = shorten_url(affiliate_url)
     
     # Build message
-    message = f"🔥 *OFERTA IMPERDÍVEL* 🔥\n\n"
-    message += f"📦 {escape_markdown(title)}\n\n"
+    message = f"🔥 *OFERTA IMPERDÍVEL* 🔥\\n\\n"
+    message += f"📦 {escape_markdown(title)}\\n\\n"
     
     if old_price and old_price > new_price:
-        message += f"~~R$ {escape_markdown(f'{old_price:.2f}')}~~ ➡️ *R$ {escape_markdown(f'{new_price:.2f}')}*\n\n"
+        message += f"~~R$ {escape_markdown(f'{old_price:.2f}')}~~ ➡️ *R$ {escape_markdown(f'{new_price:.2f}')}*\\n\\n"
     else:
-        message += f"💵 *R$ {escape_markdown(f'{new_price:.2f}')}*\n\n"
+        message += f"💵 *R$ {escape_markdown(f'{new_price:.2f}')}*\\n\\n"
     
-    message += f"🔗 [Clique aqui para comprar]({escape_markdown(short_url)})\n"
+    # Add coupon info if available
+    if coupon_code:
+        message += f"🎟️ *CUPOM:* `{escape_markdown(coupon_code)}`\\n"
+        if coupon_discount:
+            message += f"💰 *Desconto Extra:* {escape_markdown(f'{coupon_discount:.0f}')}%\\n\\n"
+        else:
+            message += "\\n"
+    
+    message += f"🔗 [Clique aqui para comprar]({escape_markdown(short_url)})\\n"
     message += f"_{escape_markdown(short_url)}_"
     
     return message
