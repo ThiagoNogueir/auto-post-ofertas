@@ -7,10 +7,7 @@
     "https://lista.mercadolivre.com.br/calcados-roupas-bolsas/_Orden_sold_quantity",
     "https://www.mercadolivre.com.br/ofertas?cat=MLB1144&category=MLB1144#c_container_id=MLB779362-1&c_element_id=20e86563-faf8-11f0-87d5-bb8b928f159b&deal_print_id=20c65e70-faf8-11f0-8e4d-05d3d1320f81&c_tracking_id=20c65e70-faf8-11f0-8e4d-05d3d1320f81",
     "https://lista.mercadolivre.com.br/supermercado/market/_Deal_cpg-ofertas-bebidas-alcoolicas_Discount_5-100_Container_cpg-ofertas-bebidas-alcoolicas#client=HOME&component_id=menu_corridors&component=menu_corridors&label=Ofertas&tracking_id=%7Btracking_id%7D",
-    "https://lista.mercadolivre.com.br/_TempoFrete_DiaSeguinte_Container_necessaire-de-verao#applied_filter_id%3Dshipping_time_highlighted_nextday%26applied_filter_name%3DTempo+de+entrega%26applied_filter_order%3D1%26applied_value_id%3Dnextday%26applied_value_name%3DChegar%C3%A1+em+menos+de+24h%26applied_value_order%3D1%26applied_value_results%3D31079%26is_custom%3Dfalse"
-  ],
-  "_comment": "URLs da Shopee - Descomente as linhas abaixo para ativar monitoramento da Shopee",
-  "shopee_urls_examples": [
+    "https://lista.mercadolivre.com.br/_TempoFrete_DiaSeguinte_Container_necessaire-de-verao#applied_filter_id%3Dshipping_time_highlighted_nextday%26applied_filter_name%3DTempo+de+entrega%26applied_filter_order%3D1%26applied_value_id%3Dnextday%26applied_value_name%3DChegar%C3%A1+em+menos+de+24h%26applied_value_order%3D1%26applied_value_results%3D31079%26is_custom%3Dfalse",
     "https://shopee.com.br/search?category=11036030",
     "https://shopee.com.br/search?category=11036132",
     "https://shopee.com.br/flash_sale"
