@@ -19,9 +19,76 @@ base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 data_dir = os.path.join(base_dir, 'data')
 os.makedirs(data_dir, exist_ok=True)
 
-# Database connection
-db_path = os.path.join(data_dir, 'deals.db')
-db = SqliteDatabase(db_path)
+# Database connection: PostgreSQL if DATABASE_URL is set, otherwise SQLite fallback
+database_url = os.getenv('DATABASE_URL')
+if database_url:
+    from playhouse.db_url import connect
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    db = connect(database_url)
+else:
+    db_path = os.path.join(data_dir, 'deals.db')
+    db = SqliteDatabase(db_path)
+
+SUBSCRIBERS_BACKUP_FILE = os.path.join(data_dir, 'subscribers_backup.json')
+
+def save_subscribers_backup():
+    """Backup active subscribers to JSON for state resilience across container restarts."""
+    try:
+        import json
+        subs = list(Subscriber.select())
+        data = [{
+            'chat_id': str(s.chat_id),
+            'username': s.username,
+            'first_name': s.first_name,
+            'categories': s.categories,
+            'is_active': s.is_active
+        } for s in subs]
+        with open(SUBSCRIBERS_BACKUP_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+def restore_subscribers_backup():
+    """Restore subscribers if table is empty after container restart."""
+    try:
+        import json
+        count = Subscriber.select().count()
+        if count > 0:
+            return
+            
+        data = []
+        # 1. Try environment variable SUBSCRIBERS_BACKUP_JSON first (cloud persistence)
+        env_backup = os.getenv('SUBSCRIBERS_BACKUP_JSON')
+        if env_backup:
+            try:
+                data = json.loads(env_backup)
+            except Exception:
+                pass
+                
+        # 2. Try file backup
+        if not data and os.path.exists(SUBSCRIBERS_BACKUP_FILE):
+            try:
+                with open(SUBSCRIBERS_BACKUP_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except Exception:
+                pass
+                
+        if data:
+            restored = 0
+            for item in data:
+                Subscriber.get_or_create(
+                    chat_id=str(item.get('chat_id')),
+                    defaults={
+                        'username': item.get('username'),
+                        'first_name': item.get('first_name'),
+                        'categories': item.get('categories', 'Nenhuma'),
+                        'is_active': item.get('is_active', True)
+                    }
+                )
+                restored += 1
+    except Exception:
+        pass
 
 
 class BaseModel(Model):
@@ -124,8 +191,11 @@ class Subscriber(BaseModel):
 
 def init_database():
     """Initialize database and create tables if they don't exist."""
-    db.connect()
+    db.connect(reuse_if_open=True)
     db.create_tables([Deal, Coupon, Subscriber], safe=True)
+    
+    # Restore subscriber preferences if table is empty
+    restore_subscribers_backup()
     
     # Simple migrations
     try:
@@ -335,6 +405,9 @@ def get_or_create_subscriber(chat_id: str, username: str = None, first_name: str
         if updated:
             sub.updated_at = get_brazil_time()
             sub.save()
+            save_subscribers_backup()
+    else:
+        save_subscribers_backup()
     return sub
 
 
@@ -376,6 +449,7 @@ def toggle_subscriber_category(chat_id: str, category: str) -> Subscriber:
             
     sub.updated_at = get_brazil_time()
     sub.save()
+    save_subscribers_backup()
     return sub
 
 
@@ -385,6 +459,7 @@ def toggle_subscriber_active(chat_id: str) -> Subscriber:
     sub.is_active = not sub.is_active
     sub.updated_at = get_brazil_time()
     sub.save()
+    save_subscribers_backup()
     return sub
 
 

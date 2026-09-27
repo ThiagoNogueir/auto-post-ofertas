@@ -254,14 +254,7 @@ def run_job():
         total_deals_found = 0
         total_deals_sent = 0
         
-        # Initialize Driver ONCE
-        from .services.simple_scraper_selenium import get_driver
-        logger.info("Initializing Single Chrome Driver...")
-        driver = get_driver()
-        
-        if not driver:
-            logger.error("Failed to initialize driver. Aborting job.")
-            return
+        driver = None
 
         from .utils.helpers import get_url_page, set_url_page, get_paginated_url
 
@@ -312,9 +305,14 @@ def run_job():
                         set_url_page(url, next_page)
                         break
         finally:
-            logger.info("Closing Chrome Driver...")
             if driver:
-                driver.quit()
+                logger.info("Closing Chrome Driver...")
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
+            import gc
+            gc.collect()
         
         logger.info("=" * 60)
         logger.info(f"Job completed: {total_deals_found} deals found, {total_deals_sent} sent")
@@ -348,9 +346,6 @@ def main():
     if debug_mode:
         logger.warning("Running in DEBUG MODE - deals will not be sent to Telegram")
     
-    # Send startup notification
-    send_notification("🤖 PromoBot started successfully!")
-    
     # Start API in a separate thread (if not already running)
     # API Server is running separately via iniciar_bot.bat
     # Logic removed to avoid port conflict (Address already in use)
@@ -375,8 +370,6 @@ def main():
             time.sleep(5)  # Check every 5 seconds for force_run or timeout
     except KeyboardInterrupt:
         logger.info("Shutting down PromoBot...")
-
-        send_notification("🛑 PromoBot stopped")
 
 
 if __name__ == "__main__":

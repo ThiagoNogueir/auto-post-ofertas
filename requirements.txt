@@ -11,3 +11,5 @@ flask
 flask-cors
 
 beautifulsoup4
+curl_cffi
+psycopg2-binary

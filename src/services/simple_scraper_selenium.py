@@ -1,29 +1,54 @@
-
 import os
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 import time
 from bs4 import BeautifulSoup
 from ..utils.logger import logger
 
-def get_driver():
+def fetch_html_fast(url: str) -> str:
     """
-    Initializes and returns a Selenium WebDriver instance with local profile.
+    Fetches raw HTML using curl_cffi with Chrome impersonation.
+    Extremely fast (~1-2s) and consumes only ~15MB RAM (avoids Render 512MB OOM crashes).
     """
     try:
+        from curl_cffi import requests as cffi_requests
+        headers = {
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        }
+        response = cffi_requests.get(url, impersonate="chrome120", timeout=15, headers=headers)
+        if response.status_code == 200 and len(response.text) > 2000:
+            logger.info(f"Fast Engine successfully fetched {len(response.text)} bytes for {url}")
+            return response.text
+        else:
+            logger.warning(f"Fast Engine got status {response.status_code} ({len(response.text)} bytes) for {url}")
+    except Exception as e:
+        logger.debug(f"Fast Engine not available or error for {url}: {e}")
+    return ""
+
+
+def get_driver():
+    """
+    Initializes and returns a Selenium WebDriver instance with low-memory configuration.
+    """
+    try:
+        from selenium import webdriver
+        from selenium.webdriver.chrome.options import Options
+        from selenium.webdriver.chrome.service import Service
+        from webdriver_manager.chrome import ChromeDriverManager
+        
         chrome_options = Options()
         chrome_bin = os.environ.get("CHROME_BIN")
         if chrome_bin:
             chrome_options.binary_location = chrome_bin
             
-        # Headless mode for stability (no profile needed)
+        # Headless mode with ultra-low memory usage for Render Free Tier (512MB RAM cap)
         chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--window-size=1280,720")
+        chrome_options.add_argument("--renderer-process-limit=1")
+        chrome_options.add_argument("--js-flags=--max-old-space-size=128")
+        chrome_options.add_argument("--disable-features=AudioServiceOutOfProcess,IsolateOrigins,site-per-process")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option("useAutomationExtension", False)
@@ -32,7 +57,6 @@ def get_driver():
         # Additional stability arguments
         chrome_options.add_argument("--disable-extensions")
         chrome_options.add_argument("--disable-software-rasterizer")
-        chrome_options.add_argument("--disable-features=VizDisplayCompositor")
         chrome_options.page_load_strategy = 'normal'
         
         if os.environ.get("CHROMEDRIVER_PATH"):
@@ -41,10 +65,8 @@ def get_driver():
             service = Service(ChromeDriverManager().install())
         
         driver = webdriver.Chrome(service=service, options=chrome_options)
-        
-        # Increase timeouts
-        driver.set_page_load_timeout(60)
-        driver.set_script_timeout(30)
+        driver.set_page_load_timeout(45)
+        driver.set_script_timeout(20)
         
         # Stealth
         driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
@@ -54,17 +76,25 @@ def get_driver():
                 })
             """
         })
-        logger.info("Chrome Driver initialized successfully (headless mode)")
+        logger.info("Chrome Driver initialized successfully (low-memory headless mode)")
         return driver
     except Exception as e:
         logger.error(f"Failed to initialize Chrome Driver: {e}")
         return None
 
+
 def fetch_html_selenium(url: str, driver=None) -> str:
     """
-    Fetches raw HTML using Selenium with retry logic.
-    If driver is provided, reuses it. Otherwise creates a new one (legacy mode).
+    Fetches raw HTML using Fast Engine first (< 15MB RAM).
+    Falls back to Selenium only if Fast Engine fails or returns empty.
     """
+    # 1. Primary: Fast Engine (Low memory, prevents Render crashes)
+    fast_html = fetch_html_fast(url)
+    if fast_html:
+        return fast_html
+        
+    # 2. Fallback: Selenium WebDriver
+    logger.info(f"Falling back to Selenium for: {url}")
     should_quit = False
     if driver is None:
         driver = get_driver()
@@ -73,64 +103,44 @@ def fetch_html_selenium(url: str, driver=None) -> str:
     if not driver:
         return ""
 
-    max_retries = 3
+    max_retries = 2
     retry_count = 0
     
     while retry_count < max_retries:
         try:
-            logger.info(f"Navigating to: {url} (attempt {retry_count + 1}/{max_retries})")
+            logger.info(f"Navigating to: {url} (Selenium attempt {retry_count + 1}/{max_retries})")
             driver.get(url)
             
             # Wait for JS to load
-            time.sleep(5) 
+            time.sleep(3) 
             
-            # Scroll logic
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 3);")
-            time.sleep(1)
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 1.5);")
+            # Simple scroll
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
             time.sleep(1)
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(2)
+            time.sleep(1)
             
             html = driver.page_source
             
             if html and len(html) > 100:
-                logger.info(f"Successfully fetched {len(html)} bytes")
+                logger.info(f"Successfully fetched {len(html)} bytes via Selenium")
                 return html
             else:
-                logger.warning(f"Page source too short, retrying...")
+                logger.warning("Page source too short, retrying...")
                 retry_count += 1
-                time.sleep(3)
+                time.sleep(2)
 
         except Exception as e:
             retry_count += 1
             logger.error(f"Selenium error (attempt {retry_count}/{max_retries}): {e}")
-            
             if retry_count < max_retries:
-                logger.info(f"Retrying in 5 seconds...")
-                time.sleep(5)
-                
-                # Try to recover
-                try:
-                    driver.refresh()
-                except:
-                    # If refresh fails, reinitialize driver if we own it
-                    if should_quit:
-                        try:
-                            driver.quit()
-                        except:
-                            pass
-                        driver = get_driver()
-                        if not driver:
-                            return ""
-            else:
-                logger.error(f"Max retries reached for {url}")
+                time.sleep(3)
         
     # Cleanup if we own the driver
     if should_quit and driver:
         try:
             driver.quit()
-        except:
+        except Exception:
             pass
             
     return ""
