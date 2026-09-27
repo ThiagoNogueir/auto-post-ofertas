@@ -416,7 +416,7 @@ def toggle_subscriber_category(chat_id: str, category: str) -> Subscriber:
     sub = get_or_create_subscriber(chat_id)
     all_categories = [
         'Celulares', 'Informática', 'Eletrônicos', 'Games', 'Casa',
-        'Bebidas', 'Beleza', 'Moda', 'Ferramentas', 'Automotivo', 'Outros'
+        'Bebidas', 'Beleza', 'Moda', 'Ferramentas', 'Automotivo', 'Pets', 'Outros'
     ]
     
     current_raw = (sub.categories or 'Nenhuma').strip()

@@ -281,6 +281,8 @@ def detect_category(title: str, url: str) -> str:
     u_norm = strip_accents(url_lower)
     
     # 1. URL Based Detection (Strongest Signal)
+    if 'category=mlb1071' in u_norm or '/animais/' in u_norm or '/pets/' in u_norm or '/pet-shop/' in u_norm:
+        return 'Pets'
     if 'celulares-telefones' in u_norm or 'celular' in u_norm or 'category=mlb1051' in u_norm:
         return 'Celulares'
     if 'informatica' in u_norm or 'computadores' in u_norm or 'category=mlb1648' in u_norm:
@@ -301,6 +303,21 @@ def detect_category(title: str, url: str) -> str:
         return 'Casa'
     if 'eletronicos-audio' in u_norm or 'tv-audio' in u_norm or 'category=mlb1000' in u_norm:
         return 'Eletrônicos'
+
+    # 2. Pets & Animais (Title Keywords)
+    pets_keywords = [
+        'racao', 'ração', 'premier pet', 'royal canin', 'golden especial', 'whiskas', 'pedigree',
+        'quatree', 'bravecto', 'nexgard', 'simparic', 'antipulgas', 'antipulga', 'carrapato',
+        'vermifugo', 'vermífugo', 'tapete higienico', 'tapete higiênico', 'caminha pet', 'cama pet',
+        'cama para cachorro', 'arranhador', 'areia para gato', 'areia higienica', 'areia higiênica',
+        'pipicat', 'comedouro', 'bebedouro pet', 'fonte pet', 'coleira', 'guia para cachorro',
+        'peitoral cachorro', 'peitoral pet', 'brinquedo para cachorro', 'brinquedo pet', 'brinquedo para gato',
+        'gaiola', 'aquario', 'aquário', 'shampoo pet', 'filhote cao', 'filhote cão', 'filhote cachorro',
+        'gatos castrados', 'petisco para caes', 'petisco para cachorro', 'petisco caes', 'churu',
+        'pet shop', 'focinheira', 'mordedor pet', 'mordedor natural', 'petiscos'
+    ]
+    if any(k in t_norm for k in pets_keywords):
+        return 'Pets'
 
     # 2. Bebidas & Alimentos / Mercado (Title Keywords)
     bebidas_keywords = [

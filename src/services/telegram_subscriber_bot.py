@@ -29,6 +29,7 @@ AVAILABLE_CATEGORIES: List[Tuple[str, str]] = [
     ("Moda", "👟 Moda"),
     ("Ferramentas", "🛠️ Ferramentas"),
     ("Automotivo", "🚗 Automotivo"),
+    ("Pets", "🐾 Pets"),
     ("Outros", "📦 Outros")
 ]
 
