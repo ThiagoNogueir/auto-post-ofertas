@@ -46,14 +46,15 @@ def process_deal(deal: Dict) -> bool:
         # Generate external ID from URL
         original_url = deal.get('original_url', '')
         external_id = extract_product_id(original_url)
+        deal_title = deal.get('title', '').strip()
         
         if not external_id:
             logger.warning("Could not generate external_id, skipping deal")
             return False
         
-        # Check if already processed
-        if is_deal_processed(external_id):
-            logger.info(f"Deal already processed: {external_id}")
+        # Check if already processed by ID or Title (prevents duplicates)
+        if is_deal_processed(external_id, title=deal_title):
+            logger.info(f"Deal already processed: {external_id} - {deal_title[:30]}")
             return False
         
         # Generate affiliate link
@@ -262,31 +263,54 @@ def run_job():
             logger.error("Failed to initialize driver. Aborting job.")
             return
 
+        from .utils.helpers import get_url_page, set_url_page, get_paginated_url
+
         try:
             for url in urls_to_monitor:
-                logger.info(f"Processing URL: {url}")
+                current_page = get_url_page(url)
+                logger.info(f"Processing URL: {url} (Continuing from Page {current_page})")
                 
-                # 1. Fetch raw data (reusing driver)
-                raw_data = fetch_html_selenium(url, driver=driver)
+                pages_checked = 0
+                max_pages_per_run = 2 if 'mercadolivre.com' in url else 1
                 
-                if not raw_data:
-                    logger.warning(f"No data fetched from {url}, skipping")
-                    continue
-                
-                # 2. Extract deals using Parser (No AI)
-                deals = extract_deals_from_html(raw_data, url)
-                total_deals_found += len(deals)
-                
-                if not deals:
-                    logger.info(f"No deals found in {url}")
-                    continue
-                
-                # 3. Process each deal
-                for deal in deals:
-                    if process_deal(deal):
-                        total_deals_sent += 1
-                        # Add delay between deals to avoid rate limiting
-                        time.sleep(2)
+                while pages_checked < max_pages_per_run:
+                    target_url = get_paginated_url(url, current_page)
+                    logger.info(f"Fetching: {target_url} (Page {current_page})")
+                    
+                    raw_data = fetch_html_selenium(target_url, driver=driver)
+                    if not raw_data:
+                        logger.warning(f"No data fetched from {target_url}, skipping")
+                        break
+                        
+                    deals = extract_deals_from_html(raw_data, target_url)
+                    total_deals_found += len(deals)
+                    
+                    if not deals:
+                        logger.info(f"No deals found on page {current_page}, resetting to page 1 for next run")
+                        set_url_page(url, 1)
+                        break
+                        
+                    new_deals_in_page = 0
+                    for deal in deals:
+                        if process_deal(deal):
+                            total_deals_sent += 1
+                            new_deals_in_page += 1
+                            time.sleep(2)
+                            
+                    logger.info(f"Page {current_page} completed: {new_deals_in_page} new deals sent out of {len(deals)} items")
+                    
+                    # If this page was already mostly processed (< 3 new deals), advance to next page immediately
+                    if new_deals_in_page < 3 and 'mercadolivre.com' in url:
+                        current_page += 1
+                        if current_page > 5:
+                            current_page = 1
+                        set_url_page(url, current_page)
+                        pages_checked += 1
+                        logger.info(f"Page was mostly processed, continuing to page {current_page}...")
+                    else:
+                        next_page = current_page + 1 if current_page < 5 else 1
+                        set_url_page(url, next_page)
+                        break
         finally:
             logger.info("Closing Chrome Driver...")
             if driver:

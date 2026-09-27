@@ -146,17 +146,30 @@ def init_database():
     return db
 
 
-def is_deal_processed(external_id: str) -> bool:
+def is_deal_processed(external_id: str, title: str = None) -> bool:
     """
-    Check if a deal has already been processed.
+    Check if a deal has already been processed by external_id OR title.
+    Prevents duplicate postings even if URLs or parameters vary slightly.
     
     Args:
         external_id: Unique identifier from the source platform
+        title: Deal title (optional, used for secondary deduplication)
         
     Returns:
         True if deal exists in database, False otherwise
     """
-    return Deal.select().where(Deal.external_id == external_id).exists()
+    try:
+        if external_id and Deal.select().where(Deal.external_id == external_id).exists():
+            return True
+            
+        if title and title.strip():
+            clean_title = title.strip()
+            if Deal.select().where(Deal.title == clean_title).exists():
+                return True
+                
+        return False
+    except Exception:
+        return False
 
 
 def save_deal(external_id: str, title: str, price: float, original_url: str, affiliate_url: str = None, image_url: str = None, category: str = 'Outros', store: str = 'Outros'):
