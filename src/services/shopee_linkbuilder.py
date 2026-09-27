@@ -28,8 +28,16 @@ def save_shopee_cookies(driver):
         logger.warning(f"Could not save Shopee cookies: {e}")
 
 def load_shopee_cookies(driver):
-    """Load Shopee cookies from file"""
+    """Load Shopee cookies from file or env"""
     try:
+        if not os.path.exists(SHOPEE_COOKIES_FILE):
+            b64_env = os.getenv("SHOPEE_COOKIES_BASE64")
+            if b64_env:
+                import base64
+                with open(SHOPEE_COOKIES_FILE, "wb") as f:
+                    f.write(base64.b64decode(b64_env))
+                logger.info("Restored cookies from SHOPEE_COOKIES_BASE64 environment variable")
+
         if os.path.exists(SHOPEE_COOKIES_FILE):
             with open(SHOPEE_COOKIES_FILE, 'rb') as f:
                 cookies = pickle.load(f)
@@ -65,6 +73,7 @@ def generate_shopee_affiliate_link(product_url: str, timeout: int = 30) -> str:
             logger.info(f"Created Shopee profile directory: {profile_dir}")
         
         chrome_options.add_argument(f"user-data-dir={profile_dir}")
+        chrome_options.add_argument("--headless=new")
         
         # Stability arguments
         chrome_options.add_argument("--no-sandbox")

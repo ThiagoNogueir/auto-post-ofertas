@@ -25,13 +25,14 @@ def escape_markdown(text: str) -> str:
     return text
 
 
+import html
 from ..utils.helpers import shorten_url
 
 def format_deal_message(deal_data: Dict) -> str:
-    # ... docstring ...
-    title = deal_data.get('title', 'Sem título')
-    old_price = deal_data.get('old_price', 0)
-    new_price = deal_data.get('new_price', 0)
+    """Format deal data into an attractive HTML message for Telegram."""
+    title = html.escape(deal_data.get('title', 'Sem título'))
+    old_price = float(deal_data.get('old_price', 0) or 0)
+    new_price = float(deal_data.get('new_price', 0) or 0)
     affiliate_url = deal_data.get('affiliate_url', deal_data.get('original_url', ''))
     coupon_code = deal_data.get('coupon_code')
     coupon_discount = deal_data.get('coupon_discount')
@@ -39,25 +40,37 @@ def format_deal_message(deal_data: Dict) -> str:
     # Shorten URL
     short_url = shorten_url(affiliate_url)
     
+    discount_pct = deal_data.get('discount_pct', 0)
+    if discount_pct == 0 and old_price > new_price:
+        discount_pct = round(((old_price - new_price) / old_price) * 100)
+
     # Build message
-    message = f"🔥 *OFERTA IMPERDÍVEL* 🔥\\n\\n"
-    message += f"📦 {escape_markdown(title)}\\n\\n"
+    if discount_pct > 0:
+        message = f"🔥 <b>OFERTA IMPERDÍVEL ({discount_pct}% OFF)!</b> 🔥\n\n"
+    else:
+        message = f"🔥 <b>OFERTA IMPERDÍVEL!</b> 🔥\n\n"
+        
+    message += f"📦 <b>{title}</b>\n\n"
     
     if old_price and old_price > new_price:
-        message += f"~~R$ {escape_markdown(f'{old_price:.2f}')}~~ ➡️ *R$ {escape_markdown(f'{new_price:.2f}')}*\\n\\n"
+        savings = old_price - new_price
+        message += f"❌ De: <s>R$ {old_price:.2f}</s>\n"
+        message += f"✅ Por: <b>R$ {new_price:.2f}</b>\n"
+        message += f"💰 <b>Economia de:</b> R$ {savings:.2f}\n\n"
     else:
-        message += f"💵 *R$ {escape_markdown(f'{new_price:.2f}')}*\\n\\n"
+        message += f"💵 <b>R$ {new_price:.2f}</b>\n\n"
     
     # Add coupon info if available
     if coupon_code:
-        message += f"🎟️ *CUPOM:* `{escape_markdown(coupon_code)}`\\n"
+        message += f"🎟️ <b>CUPOM:</b> <code>{html.escape(coupon_code)}</code>\n"
         if coupon_discount:
-            message += f"💰 *Desconto Extra:* {escape_markdown(f'{coupon_discount:.0f}')}%\\n\\n"
+            message += f"💰 <b>Desconto Extra:</b> {coupon_discount:.0f}%\n\n"
         else:
-            message += "\\n"
+            message += "\n"
     
-    message += f"🔗 [Clique aqui para comprar]({escape_markdown(short_url)})\\n"
-    message += f"_{escape_markdown(short_url)}_"
+    message += f'🛒 <a href="{short_url}"><b>Clique aqui para comprar</b></a>\n'
+    message += f"<i>{short_url}</i>\n\n"
+    message += "⚡ <i>Corre que é por tempo limitado!</i>"
     
     return message
 
@@ -67,7 +80,7 @@ def send_deal(deal_data: Dict, target_chat_id: Optional[str] = None) -> bool:
     Send deal notification to Telegram.
     
     In DEBUG mode, only logs the deal without sending.
-    In production mode, sends photo with caption to Telegram.
+    In production mode, sends photo with caption or text to Telegram using HTML.
     
     Args:
         deal_data: Deal dictionary with title, price, image_url, affiliate_url, etc.
@@ -99,43 +112,53 @@ def send_deal(deal_data: Dict, target_chat_id: Optional[str] = None) -> bool:
             logger.error("Telegram credentials not configured")
             return False
         
-        # Format message
+        # Format message in HTML
         caption = format_deal_message(deal_data)
         image_url = deal_data.get('image_url')
         
         # Telegram API endpoint
         base_url = f"https://api.telegram.org/bot{bot_token}"
         
-        # Send photo with caption if image available, otherwise send text
-        if image_url:
-            url = f"{base_url}/sendPhoto"
-            payload = {
-                'chat_id': chat_id,
-                'photo': image_url,
-                'caption': caption,
-                'parse_mode': 'MarkdownV2'
-            }
-        else:
+        # 1. Try sending photo with caption if image available and caption <= 1024 chars
+        if image_url and len(caption) <= 1024:
+            try:
+                url = f"{base_url}/sendPhoto"
+                payload = {
+                    'chat_id': chat_id,
+                    'photo': image_url,
+                    'caption': caption,
+                    'parse_mode': 'HTML'
+                }
+                response = requests.post(url, json=payload, timeout=12)
+                if response.status_code == 200:
+                    logger.info(f"Deal sent to Telegram (photo): {deal_data.get('title')}")
+                    return True
+                else:
+                    logger.warning(f"sendPhoto failed ({response.status_code}): {response.text[:150]}, falling back to text message...")
+            except Exception as pe:
+                logger.warning(f"Photo send error: {pe}, falling back to text message...")
+
+        # 2. Fallback or primary: Send as HTML text message
+        try:
             url = f"{base_url}/sendMessage"
             payload = {
                 'chat_id': chat_id,
                 'text': caption,
-                'parse_mode': 'MarkdownV2',
+                'parse_mode': 'HTML',
                 'disable_web_page_preview': False
             }
-        
-        # Send request
-        response = requests.post(url, json=payload, timeout=10)
-        response.raise_for_status()
-        
-        logger.info(f"Deal sent to Telegram successfully: {deal_data.get('title')}")
-        return True
-        
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to send deal to Telegram: {e}")
-        if hasattr(e, 'response') and e.response is not None:
-            logger.error(f"Response: {e.response.text}")
-        return False
+            
+            response = requests.post(url, json=payload, timeout=15)
+            if response.status_code == 200:
+                logger.info(f"Deal sent to Telegram (text): {deal_data.get('title')}")
+                return True
+            else:
+                logger.error(f"sendMessage failed ({response.status_code}): {response.text[:200]}")
+                return False
+        except requests.exceptions.RequestException as te:
+            logger.error(f"Failed to send text deal to Telegram: {te}")
+            return False
+            
     except Exception as e:
         logger.error(f"Unexpected error sending deal to Telegram: {e}")
         return False

@@ -116,7 +116,7 @@ Text to analyze:
 
 def validate_deal(deal: Dict) -> bool:
     """
-    Validate that a deal has all required fields.
+    Validate that a deal has all required fields and meets minimum discount criteria.
     
     Args:
         deal: Deal dictionary
@@ -130,5 +130,28 @@ def validate_deal(deal: Dict) -> bool:
         if field not in deal or not deal[field]:
             logger.warning(f"Deal missing required field: {field}")
             return False
+            
+    # Check minimum discount filter
+    try:
+        config_path = os.path.join(os.getcwd(), 'urls_config.json')
+        min_discount = 15
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+                min_discount = cfg.get('min_discount_percentage', 15)
+                
+        discount_pct = deal.get('discount_pct', 0)
+        old_price = float(deal.get('old_price', 0) or 0)
+        new_price = float(deal.get('new_price', 0) or 0)
+        
+        if discount_pct == 0 and old_price > new_price:
+            discount_pct = round(((old_price - new_price) / old_price) * 100)
+            deal['discount_pct'] = discount_pct
+            
+        if min_discount > 0 and discount_pct < min_discount:
+            logger.info(f"Skipping '{deal.get('title')[:35]}...': discount {discount_pct}% is below minimum {min_discount}%")
+            return False
+    except Exception as e:
+        logger.debug(f"Could not apply discount filter: {e}")
     
     return True

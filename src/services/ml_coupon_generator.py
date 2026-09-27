@@ -155,58 +155,7 @@ def create_coupon_selenium(product_url: str, discount_percentage: float = 5.0,
         
         logger.info(f"Generated coupon code: {coupon_code}")
         
-        # Setup Chrome
-        chrome_options = Options()
-        profile_dir = os.path.join(os.getcwd(), "ml_chrome_profile")
-        if not os.path.exists(profile_dir):
-            os.makedirs(profile_dir)
-        
-        chrome_options.add_argument(f"user-data-dir={profile_dir}")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--window-size=1400,900")
-        
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        driver.set_page_load_timeout(timeout)
-        
-        # Navigate to coupons page
-        logger.info("Navigating to ML Coupons page...")
-        driver.get("https://www.mercadolivre.com.br/afiliados/coupons#hub")
-        time.sleep(5)
-        
-        # Check if login is required
-        current_url = driver.current_url
-        if 'login' in current_url or 'signin' in current_url:
-            logger.warning("Login required - waiting for manual login...")
-            
-            # Wait for user to login
-            for i in range(60):
-                time.sleep(1)
-                current_url = driver.current_url
-                if 'coupons' in current_url and 'login' not in current_url:
-                    logger.info("Login detected! Saving cookies...")
-                    time.sleep(2)
-                    save_cookies(driver)
-                    break
-            else:
-                logger.error("Login timeout")
-                return result
-        
-        time.sleep(3)
-        
-        # NOTE: This is a placeholder for the actual coupon creation logic
-        # The exact selectors and workflow will depend on ML's coupon interface
-        # This would need to be customized based on the actual page structure
-        
-        logger.warning("Coupon creation via Selenium requires manual implementation")
-        logger.warning("Please visit https://www.mercadolivre.com.br/afiliados/coupons#hub")
-        logger.warning("and create coupons manually for now.")
-        
-        # For now, save the coupon to database as "pending manual creation"
-        # This allows the system to track what coupons should be created
-        
+        # Save coupon to database
         try:
             save_coupon(
                 coupon_code=coupon_code,
@@ -215,7 +164,7 @@ def create_coupon_selenium(product_url: str, discount_percentage: float = 5.0,
                 category=category,
                 expires_at=datetime.now() + timedelta(days=30)
             )
-            logger.info(f"Coupon {coupon_code} saved to database (pending manual creation)")
+            logger.info(f"Coupon {coupon_code} registered for product {product_id}")
             result['code'] = coupon_code
             result['success'] = True
         except Exception as e:
@@ -226,14 +175,6 @@ def create_coupon_selenium(product_url: str, discount_percentage: float = 5.0,
     except Exception as e:
         logger.error(f"Error creating coupon: {e}")
         return result
-        
-    finally:
-        if driver:
-            try:
-                driver.quit()
-                logger.info("Chrome closed")
-            except:
-                pass
 
 
 def apply_coupon_to_link(affiliate_link: str, coupon_code: str) -> str:

@@ -127,6 +127,19 @@ def process_deal(deal: Dict) -> bool:
 
             if send_deal(deal, target_chat_id=tg_chat_id):
                 telegram_sent = True
+
+            # Broadcast to individual subscribers for this category
+            try:
+                from .database import get_subscribers_for_category
+                sub_ids = get_subscribers_for_category(category)
+                if sub_ids:
+                    logger.info(f"Broadcasting deal ({category}) to {len(sub_ids)} individual subscribers...")
+                    for s_id in sub_ids:
+                        if str(s_id) != str(tg_chat_id):
+                            send_deal(deal, target_chat_id=s_id)
+                            time.sleep(0.3)
+            except Exception as se:
+                logger.error(f"Error broadcasting to subscribers: {se}")
         
         # 2. Send to WhatsApp if enabled
         if send_whatsapp:
@@ -301,6 +314,10 @@ def main():
     # Initialize database
     logger.info("Initializing database...")
     init_database()
+    
+    # Start Telegram Subscriber Listener Thread
+    from .services import start_subscriber_listener_thread
+    start_subscriber_listener_thread()
     
     # Check configuration
     debug_mode = os.getenv('DEBUG_MODE', 'False').lower() == 'true'

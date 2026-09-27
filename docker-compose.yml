@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  promobot:
+    build: .
+    container_name: promobot
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./urls_config.json:/app/urls_config.json
+      - ./groups_config.json:/app/groups_config.json
+      - ./coupon_config.json:/app/coupon_config.json
+      - ./ml_linkbuilder_cookies.pkl:/app/ml_linkbuilder_cookies.pkl
+      - ./.env:/app/.env
+    environment:
+      - PORT=5000
+      - CHROME_BIN=/usr/bin/google-chrome

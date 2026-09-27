@@ -2,20 +2,34 @@
   "category_routing": {
     "enabled": true,
     "send_to_telegram": true,
-    "send_to_whatsapp": true
+    "send_to_whatsapp": false
   },
   "telegram_groups": {
     "default": "-1003499671429",
     "Celulares": "-1003499671429",
-    "Eletrônicos": "-1003499671429",
     "Informática": "-1003499671429",
-    "Casa": "-1003499671429"
+    "Eletrônicos": "-1003499671429",
+    "Games": "-1003499671429",
+    "Casa": "-1003499671429",
+    "Bebidas": "-1003499671429",
+    "Beleza": "-1003499671429",
+    "Moda": "-1003499671429",
+    "Ferramentas": "-1003499671429",
+    "Automotivo": "-1003499671429",
+    "Outros": "-1003499671429"
   },
   "whatsapp_groups": {
     "default": "120363422429816674@g.us",
     "Celulares": "120363422429816674@g.us",
-    "Eletrônicos": "120363422429816674@g.us",
     "Informática": "120363422429816674@g.us",
-    "Casa": "120363422429816674@g.us"
+    "Eletrônicos": "120363422429816674@g.us",
+    "Games": "120363422429816674@g.us",
+    "Casa": "120363422429816674@g.us",
+    "Bebidas": "120363422429816674@g.us",
+    "Beleza": "120363422429816674@g.us",
+    "Moda": "120363422429816674@g.us",
+    "Ferramentas": "120363422429816674@g.us",
+    "Automotivo": "120363422429816674@g.us",
+    "Outros": "120363422429816674@g.us"
   }
 }

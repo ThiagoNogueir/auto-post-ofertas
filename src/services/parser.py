@@ -138,21 +138,34 @@ def parse_mercadolivre(soup: BeautifulSoup) -> List[Dict]:
             # OLD PRICE EXTRACTION
             old_price = 0.0
             old_price_container = (card.select_one('.poly-price__old .andes-money-amount__fraction') or
-                                  card.select_one('.ui-search-price__original-value .andes-money-amount__fraction'))
+                                  card.select_one('.ui-search-price__original-value .andes-money-amount__fraction') or
+                                  card.select_one('.andes-money-amount--previous .andes-money-amount__fraction'))
             
             if old_price_container:
                 old_price = parse_price(old_price_container.get_text().strip())
-            elif new_price > 0:
-                old_price = new_price * 1.3 # Fake if not found
+
+            # DISCOUNT PERCENTAGE EXTRACTION
+            discount_container = (card.select_one('.poly-price__discount') or
+                                 card.select_one('.ui-search-price__discount') or
+                                 card.select_one('.andes-money-amount__discount') or
+                                 card.select_one('[class*="discount"]'))
+            
+            discount_pct = 0
+            if discount_container:
+                disc_match = re.search(r'(\d+)%', discount_container.get_text())
+                if disc_match:
+                    discount_pct = int(disc_match.group(1))
+
+            # Calculate or synchronize old price and discount percentage
+            if discount_pct > 0 and (old_price == 0 or old_price <= new_price):
+                old_price = round(new_price / (1 - (discount_pct / 100)), 2)
+            elif old_price > new_price and discount_pct == 0:
+                discount_pct = round(((old_price - new_price) / old_price) * 100)
 
             # Skip if no valid price
             if new_price == 0:
                 logger.debug(f"Skipping '{title}': no valid price")
                 continue
-            
-            # Final sanity check: if old price < new price, swap them or fix
-            if old_price > 0 and old_price < new_price:
-                 old_price = new_price * 1.2 # Fix weird data
             
             # CENTS Handling (optional - append cents if found separately)
             # Some layouts have cents in a separate superscrit tag
@@ -174,12 +187,13 @@ def parse_mercadolivre(soup: BeautifulSoup) -> List[Dict]:
             # CATEGORY DETECTION
             category = detect_category(title, original_url)
 
-            logger.debug(f"Found deal: {title} - R$ {new_price} (Old: {old_price}) [{category}]")
+            logger.debug(f"Found deal: {title} - R$ {new_price} (Old: {old_price}, {discount_pct}% OFF) [{category}]")
             
             items.append({
                 'title': title,
                 'new_price': new_price,
                 'old_price': old_price,
+                'discount_pct': discount_pct,
                 'original_url': original_url,
                 'image_url': image_url,
                 'category': category
@@ -254,33 +268,166 @@ def parse_shopee(soup: BeautifulSoup) -> List[Dict]:
 def detect_category(title: str, url: str) -> str:
     """
     Infers category from URL segments and title keywords.
-    Prioritizes URL context.
+    Accurately supports top selling e-commerce categories:
+    Celulares, Informática, Eletrônicos, Games, Casa, Bebidas, Beleza, Moda, Ferramentas, Automotivo.
     """
+    import unicodedata
+    def strip_accents(text: str) -> str:
+        return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+
     url_lower = url.lower()
     title_lower = title.lower()
+    t_norm = strip_accents(title_lower)
+    u_norm = strip_accents(url_lower)
     
     # 1. URL Based Detection (Strongest Signal)
-    if 'celulares-telefones' in url_lower or 'celular' in url_lower:
+    if 'celulares-telefones' in u_norm or 'celular' in u_norm or 'category=mlb1051' in u_norm:
         return 'Celulares'
-    if 'informatica' in url_lower or 'notebook' in url_lower or 'computad' in url_lower:
+    if 'informatica' in u_norm or 'computadores' in u_norm or 'category=mlb1648' in u_norm:
         return 'Informática'
-    if 'games' in url_lower or 'game' in url_lower or 'console' in url_lower or 'videogame' in url_lower:
+    if 'consoles-video-games' in u_norm or '/games/' in u_norm or 'video-games' in u_norm or 'category=mlb1144' in u_norm:
         return 'Games'
-    if 'eletrodomesticos' in url_lower:
+    if 'category=mlb278123' in u_norm or 'category=mlb1403' in u_norm or '/bebidas/' in u_norm or '/alimentos-bebidas/' in u_norm:
+        return 'Bebidas'
+    if 'category=mlb1246' in u_norm or '/beleza-cuidado-pessoal/' in u_norm or '/beleza/' in u_norm:
+        return 'Beleza'
+    if 'category=mlb1430' in u_norm or '/calcados-roupas-bolsas/' in u_norm or '/moda/' in u_norm:
+        return 'Moda'
+    if 'category=mlb1500' in u_norm or '/ferramentas/' in u_norm:
+        return 'Ferramentas'
+    if 'category=mlb1743' in u_norm or '/acessorios-veiculos/' in u_norm or '/automotivo/' in u_norm:
+        return 'Automotivo'
+    if 'eletrodomesticos' in u_norm or 'casa-moveis' in u_norm or 'cama-mesa-banho' in u_norm or 'category=mlb1499' in u_norm:
         return 'Casa'
-    if 'tv' in url_lower and 'audio' in url_lower:
+    if 'eletronicos-audio' in u_norm or 'tv-audio' in u_norm or 'category=mlb1000' in u_norm:
         return 'Eletrônicos'
-        
-    # 2. Title Keyword Fallback
-    if any(k in title_lower for k in ['iphone', 'samsung galaxy', 'motorola', 'xiaomi', 'redmi', 'smartphone']):
+
+    # 2. Bebidas & Alimentos / Mercado (Title Keywords)
+    bebidas_keywords = [
+        'vinho', 'espumante', 'prosecco', 'cerveja', 'chope', 'whisky', 'whiskey', 'vodka',
+        'gin ', 'licor', 'tequila', 'rum ', 'cachaca', 'cachaça', 'refrigerante', 'coca-cola',
+        'pepsi', 'guarana antarctica', 'energetico', 'energético', 'red bull', 'monster energy',
+        'isotonico', 'isotônico', 'powerade', 'gatorade', 'agua mineral', 'água mineral',
+        'azeite de oliva', 'azeite extra virgem', 'cafe em grao', 'café em grão',
+        'capsulas de cafe', 'cápsulas de café', 'nespresso', 'dolce gusto',
+        'whey protein', 'whey 100%', 'creatina monohidratada', 'creatina'
+    ]
+    if any(k in t_norm for k in bebidas_keywords):
+        return 'Bebidas'
+
+    # 3. Beleza & Perfumaria (Title Keywords)
+    beleza_keywords = [
+        'perfume', 'eau de parfum', 'eau de toilette', 'desodorante', 'hidratante corporal',
+        'serum facial', 'sérum', 'protetor solar', 'shampoo', 'condicionador', 'mascara capilar',
+        'secador de cabelo', 'prancha alisadora', 'chapinha', 'babyliss', 'modelador de cachos',
+        'barbeador eletrico', 'aparador de pelos', 'maquiagem', 'batom', 'rimel', 'base facial',
+        'esmalte', 'carolina herrera', 'paco rabanne', 'la roche-posay', 'cerave'
+    ]
+    if any(k in t_norm for k in beleza_keywords):
+        return 'Beleza'
+
+    # 4. Ferramentas & Construção (Title Keywords)
+    ferramentas_keywords = [
+        'furadeira', 'parafusadeira', 'esmerilhadeira', 'serra circular', 'serra tico-tico',
+        'martelete', 'compressor de ar', 'lavadora de alta pressao', 'lavadora de alta pressão',
+        'karcher', 'wap', 'maleta de ferramentas', 'caixa de ferramentas', 'jogo de chaves',
+        'chave de fenda', 'chave philips', 'chave combinada', 'chave catraca', 'trena',
+        'nivel laser', 'nível laser', 'alicate universal', 'inversora de solda', 'bosch',
+        'dewalt', 'makita', 'vonder'
+    ]
+    if any(k in t_norm for k in ferramentas_keywords):
+        return 'Ferramentas'
+
+    # 5. Moda & Calçados (Title Keywords)
+    moda_keywords = [
+        'tenis', 'tênis', 'sapato', 'sapatilha', 'sandalia', 'sandália', 'chinelo',
+        'bota', 'coturno', 'camisa polo', 'camiseta', 'calca jeans', 'calça jeans',
+        'bermuda', 'shorts', 'jaqueta', 'moletom', 'vestido', 'saia', 'cueca', 'calcinha',
+        'sutia', 'sutiã', 'mochila', 'bolsa feminina', 'carteira masculina',
+        'oculos de sol', 'óculos de sol', 'relogio masculino', 'relogio feminino',
+        'nike', 'adidas', 'olympikus', 'asics', 'mizuno'
+    ]
+    if any(k in t_norm for k in moda_keywords):
+        return 'Moda'
+
+    # 6. Automotivo (Title Keywords)
+    automotivo_keywords = [
+        'pneu ', 'pneus', 'som automotivo', 'central multimidia', 'central multimídia',
+        'lampada led h4', 'lampada led h7', 'farol de milha', 'bateria de carro', 'bateria automotiva',
+        'moura', 'heliar', 'oleo para motor', 'óleo para motor', 'oleo 5w30', 'oleo 15w40',
+        'capacete para moto', 'capacete moto', 'capa para carro', 'alarme automotivo',
+        'camera de re', 'câmera de ré', 'rastreador veicular', 'suporte veicular'
+    ]
+    if any(k in t_norm for k in automotivo_keywords):
+        return 'Automotivo'
+
+    # 7. Casa - Kits e Eletrodomésticos
+    casa_kits = [
+        'jogo de toalha', 'jogo de panela', 'jogo de cama', 'jogo de lencol',
+        'jogo de taca', 'jogo de copo', 'jogo de prato', 'jogo de xicara',
+        'jogo de faca', 'jogo de talher', 'jogo de tigela', 'jogo de pote',
+        'jogo de sobremesa', 'jogo de banheiro', 'jogo de cozinha', 'jogo americano', 'sousplat'
+    ]
+    if any(k in t_norm for k in casa_kits):
+        return 'Casa'
+
+    casa_keywords = [
+        'cafeteira', 'balanca', 'air fryer', 'fritadeira', 'liquidificador', 'batedeira',
+        'sanduicheira', 'micro-ondas', 'microondas', 'fogao', 'cooktop', 'forno eletrico',
+        'geladeira', 'refrigerador', 'freezer', 'purificador', 'bebedouro', 'chaleira',
+        'panela de pressao', 'panela eletrica', 'torradeira', 'aspirador', 'robo aspirador',
+        'ferro de passar', 'vaporizador', 'maquina de lavar', 'lava e seca', 'tanquinho',
+        'ventilador', 'ar condicionado', 'climatizador', 'umidificador', 'toalha', 'edredom',
+        'cobertor', 'lencol', 'travesseiro', 'manta', 'tapete', 'cortina', 'almofada',
+        'colchao', 'cobre leito', 'panela', 'faqueiro', 'talher', 'garrafa termica',
+        'pote hermetico', 'marmita', 'lixeira', 'varal', 'chuveiro', 'torneira', 'guarda-roupa',
+        'sofa', 'poltrona'
+    ]
+    if any(k in t_norm for k in casa_keywords):
+        return 'Casa'
+
+    # 8. Games - Consoles, Gamer Gear, Gaming Titles
+    games_keywords = [
+        'playstation', 'ps5', 'ps4', 'ps3', 'xbox', 'nintendo switch', 'nintendo',
+        'switch oled', 'switch lite', 'videogame', 'video game', 'console',
+        'dualsense', 'dualshock', 'joy-con', 'joycon', 'gamepad', 'gamer',
+        'volante g29', 'midia fisica'
+    ]
+    if any(k in t_norm for k in games_keywords):
+        return 'Games'
+
+    if 'jogo ' in t_norm or 'jogos ' in t_norm:
+        if not any(f in t_norm for f in ['jogo de', 'jogos de', 'jogo americano']):
+            if any(w in t_norm for w in ['ps5', 'ps4', 'xbox', 'switch', 'pc', 'rpg', 'fc 24', 'fc 25', 'fifa', 'gta', 'pokemon', 'mario', 'zelda', 'resident evil', 'spider-man', 'god of war']):
+                return 'Games'
+
+    # 9. Celulares
+    celulares_keywords = [
+        'iphone', 'smartphone', 'celular', 'galaxy s', 'galaxy a', 'galaxy m', 'galaxy z',
+        'redmi', 'xiaomi', 'motorola', 'moto g', 'moto e', 'moto edge', 'poco ', 'realme', 'infinix'
+    ]
+    if any(k in t_norm for k in celulares_keywords):
         return 'Celulares'
-    if any(k in title_lower for k in ['notebook', 'laptop', 'macbook', 'dell', 'lenovo', 'acer', 'monitor', 'mouse', 'teclado']):
+
+    # 10. Informática
+    informatica_keywords = [
+        'notebook', 'laptop', 'macbook', 'computador', 'pc desktop', 'pc gamer', 'monitor',
+        'mouse', 'teclado', 'mousepad', 'webcam', 'roteador', 'ssd', 'nvme', 'memoria ram',
+        'placa de video', 'placa-mae', 'placa mae', 'processador ryzen', 'processador intel',
+        'core i3', 'core i5', 'core i7', 'core i9', 'ryzen 5', 'ryzen 7', 'impressora'
+    ]
+    if any(k in t_norm for k in informatica_keywords):
         return 'Informática'
-    if any(k in title_lower for k in ['ps5', 'playstation', 'xbox', 'nintendo', 'switch', 'game', 'jogo']):
-        return 'Games'
-    if any(k in title_lower for k in ['tv', 'smart tv', 'som', 'fones', 'bluetooth']):
+
+    # 11. Eletrônicos
+    eletronicos_keywords = [
+        'smart tv', 'televisao', 'tv 4k', 'tv 32', 'tv 43', 'tv 50', 'tv 55', 'tv 65',
+        'soundbar', 'caixa de som', 'fone de ouvido', 'headphone', 'earbuds', 'airpods',
+        'jbl', 'bluetooth', 'alexa', 'echo dot', 'echo pop', 'projetor', 'smartwatch',
+        'kindle'
+    ]
+    if any(k in t_norm for k in eletronicos_keywords):
         return 'Eletrônicos'
-    if any(k in title_lower for k in ['geladeira', 'fogão', 'microondas', 'aspirador', 'fritadeira', 'air fryer']):
-        return 'Casa'
-        
+
     return 'Outros'
+

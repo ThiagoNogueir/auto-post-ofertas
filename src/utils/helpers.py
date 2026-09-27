@@ -3,14 +3,26 @@ import requests
 
 def shorten_url(url: str) -> str:
     """
-    Shorten URL using is.gd (free, no auth required).
-    Fallback to original URL if shortening fails.
+    Shorten long URL using is.gd if needed.
+    Keeps official short links (meli.la, shope.ee, /sec/) intact.
+    Fallback to original URL if shortening fails or returns an error.
     """
+    if not url:
+        return ""
+        
+    # If already an official short link, keep it as is!
+    if any(domain in url for domain in ['meli.la', 'shope.ee', 'mercadolivre.com/sec/']):
+        return url
+        
     try:
-        api_url = f"https://is.gd/create.php?format=simple&url={url}"
+        from urllib.parse import quote
+        encoded_url = quote(url, safe='')
+        api_url = f"https://is.gd/create.php?format=simple&url={encoded_url}"
         response = requests.get(api_url, timeout=5)
-        if response.status_code == 200:
-            return response.text.strip()
+        text = response.text.strip()
+        # Verify it returned a real URL and not an error string like "Error, database insert failed"
+        if response.status_code == 200 and text.startswith('http'):
+            return text
         return url
     except Exception:
         return url

@@ -101,10 +101,31 @@ class Coupon(BaseModel):
         )
 
 
+class Subscriber(BaseModel):
+    """
+    Subscriber model for Telegram users and their category preferences.
+    """
+    id = AutoField(primary_key=True)
+    chat_id = CharField(unique=True, index=True)
+    username = CharField(null=True)
+    first_name = CharField(null=True)
+    categories = TextField(default='Todas')  # Comma-separated: "Celulares,Informática,Games" or "Todas"
+    is_active = BooleanField(default=True)
+    created_at = DateTimeField(default=get_brazil_time)
+    updated_at = DateTimeField(default=get_brazil_time)
+
+    class Meta:
+        table_name = 'subscribers'
+        indexes = (
+            (('chat_id',), True),
+            (('is_active',), False),
+        )
+
+
 def init_database():
     """Initialize database and create tables if they don't exist."""
     db.connect()
-    db.create_tables([Deal, Coupon], safe=True)
+    db.create_tables([Deal, Coupon, Subscriber], safe=True)
     
     # Simple migrations
     try:
@@ -276,3 +297,96 @@ def update_coupon_usage(coupon_code: str):
         coupon.save()
     except:
         pass
+
+
+def get_or_create_subscriber(chat_id: str, username: str = None, first_name: str = None) -> Subscriber:
+    """Get existing subscriber or create a new one."""
+    chat_id = str(chat_id)
+    sub, created = Subscriber.get_or_create(
+        chat_id=chat_id,
+        defaults={
+            'username': username,
+            'first_name': first_name,
+            'categories': 'Nenhuma',
+            'is_active': True
+        }
+    )
+    if not created:
+        updated = False
+        if username and sub.username != username:
+            sub.username = username
+            updated = True
+        if first_name and sub.first_name != first_name:
+            sub.first_name = first_name
+            updated = True
+        if updated:
+            sub.updated_at = get_brazil_time()
+            sub.save()
+    return sub
+
+
+def toggle_subscriber_category(chat_id: str, category: str) -> Subscriber:
+    """Toggle a category subscription for a user."""
+    sub = get_or_create_subscriber(chat_id)
+    all_categories = [
+        'Celulares', 'Informática', 'Eletrônicos', 'Games', 'Casa',
+        'Bebidas', 'Beleza', 'Moda', 'Ferramentas', 'Automotivo', 'Outros'
+    ]
+    
+    current_raw = (sub.categories or 'Nenhuma').strip()
+    is_all = current_raw == 'Todas'
+    
+    if category == 'Todas':
+        sub.categories = 'Nenhuma' if is_all else 'Todas'
+    elif category in ('Limpar', 'Nenhuma'):
+        sub.categories = 'Nenhuma'
+    else:
+        # Category is one of individual categories
+        if is_all:
+            # If user had 'Todas' and clicked one category, deselect that one
+            current = [c for c in all_categories if c != category]
+        elif current_raw in ('Nenhuma', ''):
+            current = [category]
+        else:
+            current = [c.strip() for c in current_raw.split(',') if c.strip() and c.strip() != 'Nenhuma']
+            if category in current:
+                current.remove(category)
+            else:
+                current.append(category)
+
+        if set(current) >= set(all_categories):
+            sub.categories = 'Todas'
+        elif not current:
+            sub.categories = 'Nenhuma'
+        else:
+            sub.categories = ','.join(current)
+            
+    sub.updated_at = get_brazil_time()
+    sub.save()
+    return sub
+
+
+def toggle_subscriber_active(chat_id: str) -> Subscriber:
+    """Pause or resume alerts for a user."""
+    sub = get_or_create_subscriber(chat_id)
+    sub.is_active = not sub.is_active
+    sub.updated_at = get_brazil_time()
+    sub.save()
+    return sub
+
+
+def get_subscribers_for_category(category: str) -> list:
+    """Get all active subscriber chat_ids interested in this category."""
+    try:
+        active_subs = Subscriber.select().where(Subscriber.is_active == True)
+        matched_chat_ids = []
+        
+        for sub in active_subs:
+            cats = [c.strip() for c in sub.categories.split(',') if c.strip()]
+            if 'Todas' in cats or category in cats:
+                matched_chat_ids.append(sub.chat_id)
+                
+        return matched_chat_ids
+    except Exception:
+        return []
+

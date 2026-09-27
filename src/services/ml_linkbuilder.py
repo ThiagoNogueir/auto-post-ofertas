@@ -5,6 +5,8 @@ Uses Selenium to access ML's Link Builder tool
 import os
 import time
 import pickle
+from typing import Optional
+import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -28,8 +30,16 @@ def save_cookies(driver):
         logger.warning(f"Could not save cookies: {e}")
 
 def load_cookies(driver):
-    """Load cookies from file"""
+    """Load cookies from file or env"""
     try:
+        if not os.path.exists(COOKIES_FILE):
+            b64_env = os.getenv("ML_COOKIES_BASE64")
+            if b64_env:
+                import base64
+                with open(COOKIES_FILE, "wb") as f:
+                    f.write(base64.b64decode(b64_env))
+                logger.info("Restored cookies from ML_COOKIES_BASE64 environment variable")
+
         if os.path.exists(COOKIES_FILE):
             with open(COOKIES_FILE, 'rb') as f:
                 cookies = pickle.load(f)
@@ -41,9 +51,72 @@ def load_cookies(driver):
         logger.warning(f"Could not load cookies: {e}")
     return False
 
+def generate_link_via_api(product_url: str) -> Optional[str]:
+    """
+    Generates official ML affiliate short link (meli.la) directly via HTTP API.
+    Does not launch Chrome or use Selenium.
+    """
+    try:
+        if not os.path.exists(COOKIES_FILE):
+            b64_env = os.getenv("ML_COOKIES_BASE64")
+            if b64_env:
+                import base64
+                with open(COOKIES_FILE, "wb") as f:
+                    f.write(base64.b64decode(b64_env))
+                logger.info("Restored cookies from ML_COOKIES_BASE64 environment variable")
+            else:
+                logger.warning(f"Cookies file {COOKIES_FILE} not found for API generation")
+                return None
+            
+        with open(COOKIES_FILE, 'rb') as f:
+            cookie_list = pickle.load(f)
+            
+        cookies = {c['name']: c['value'] for c in cookie_list}
+        csrf_token = cookies.get('_csrf')
+        affiliate_tag = os.getenv('ML_AFFILIATE_ID') or cookies.get('orgnickp')
+        
+        if not affiliate_tag:
+            logger.warning("No affiliate tag found in env or cookies")
+            return None
+            
+        # Clean URL anchor and trailing spaces
+        clean_url = product_url.split('#')[0].strip()
+        
+        headers = {
+            'accept': 'application/json, text/plain, */*',
+            'content-type': 'application/json',
+            'x-csrf-token': csrf_token or '',
+            'referer': clean_url,
+            'origin': 'https://produto.mercadolivre.com.br',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+        }
+        
+        response = requests.post(
+            'https://www.mercadolivre.com.br/affiliate-program/api/v2/stripe/user/links',
+            json={'url': clean_url, 'tag': affiliate_tag},
+            headers=headers,
+            cookies=cookies,
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            short_url = data.get('short_url')
+            if short_url:
+                logger.info(f"Generated affiliate link via ML API (No Chrome): {short_url}")
+                return short_url
+        else:
+            logger.warning(f"ML Affiliate API returned status {response.status_code}: {response.text[:150]}")
+            
+    except Exception as e:
+        logger.error(f"Error calling ML Affiliate API: {e}")
+        
+    return None
+
 def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
     """
     Uses ML's official Link Builder to generate affiliate links.
+    Tries fast HTTP API first (no Chrome), then falls back to headless Selenium.
     
     Args:
         product_url: ML product URL
@@ -52,6 +125,12 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
     Returns:
         Affiliate link or original URL if failed
     """
+    # 1. Try direct API first (Instant, No Chrome window)
+    api_link = generate_link_via_api(product_url)
+    if api_link:
+        return api_link
+        
+    logger.info("Falling back to Selenium Link Builder (Headless mode)...")
     driver = None
     try:
         logger.info(f"Using ML Link Builder for: {product_url}")
@@ -66,7 +145,8 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
         
         chrome_options.add_argument(f"user-data-dir={profile_dir}")
         
-        # Stability arguments
+        # Headless mode so Chrome doesn't open on user's screen
+        chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-gpu")
@@ -76,7 +156,7 @@ def generate_link_with_linkbuilder(product_url: str, timeout: int = 30) -> str:
         # Use webdriver-manager
         service = Service(ChromeDriverManager().install())
         
-        logger.info("Starting Chrome for Link Builder...")
+        logger.info("Starting Headless Chrome for Link Builder...")
         driver = webdriver.Chrome(service=service, options=chrome_options)
         driver.set_page_load_timeout(timeout)
         

@@ -118,13 +118,25 @@ def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: fl
     # Shorten URL
     short_url = shorten_url(url)
     
+    discount_pct = 0
+    savings = 0.0
+    if old_price and old_price > price:
+        discount_pct = round(((old_price - price) / old_price) * 100)
+        savings = old_price - price
+        
+    header = f"🔥 *OFERTA IMPERDÍVEL ({discount_pct}% OFF)!* 🔥" if discount_pct > 0 else "🔥 *OFERTA IMPERDÍVEL!* 🔥"
+    
+    if savings > 0:
+        price_text = f"❌ *De:* ~R$ {old_price:.2f}~\n✅ *Por:* R$ {price:.2f}\n💰 *Economia de:* R$ {savings:.2f}"
+    else:
+        price_text = f"💵 *Por:* R$ {price:.2f}"
+    
     # Format message
-    message = f"""🔥 *OFERTA IMPERDÍVEL!* 🔥
+    message = f"""{header}
 
 📦 {title}
 
-💰 *De:* ~R$ {old_price:.2f}~
-💵 *Por:* R$ {price:.2f}
+{price_text}
 
 🛒 *Link de Compra:*
 {short_url}

@@ -1,0 +1,51 @@
+name: PromoBot - Disparo Automático de Ofertas
+
+on:
+  schedule:
+    # Executa automaticamente a cada 30 minutos
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Permite disparar manualmente com 1 clique no GitHub
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg ca-certificates
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Instalar dependências Python
+        run: |
+          pip install -r requirements.txt
+
+      - name: Executar PromoBot (Varredura e Envio de Ofertas)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ML_AFFILIATE_ID: ${{ secrets.ML_AFFILIATE_ID }}
+          EVOLUTION_API_URL: ${{ secrets.EVOLUTION_API_URL }}
+          EVOLUTION_API_KEY: ${{ secrets.EVOLUTION_API_KEY }}
+          EVOLUTION_INSTANCE_NAME: ${{ secrets.EVOLUTION_INSTANCE_NAME }}
+        run: |
+          python -c "from src.main import run_job; run_job()"
+
+      - name: Persistir histórico de ofertas para evitar duplicidade
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/deals.db
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: atualiza historico de ofertas [skip ci]" && git push)
