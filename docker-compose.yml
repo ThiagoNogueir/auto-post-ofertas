@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   promobot:
     build: .
@@ -23,7 +21,7 @@ services:
       - evolution-api
 
   evolution-api:
-    image: atendai/evolution-api:v1.8.2
+    image: evoapicloud/evolution-api:v1.8.2
     container_name: evolution_api
     restart: unless-stopped
     ports:

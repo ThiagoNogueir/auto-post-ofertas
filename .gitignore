@@ -28,6 +28,8 @@ venv/
 env/
 ENV/
 .env
+*.key
+*.pub
 
 # Logs
 logs/

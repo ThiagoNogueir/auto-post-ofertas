@@ -201,7 +201,26 @@ def process_deal(deal: Dict) -> bool:
             except Exception as e:
                 logger.error(f"Error sending to WhatsApp: {e}")
 
-        # 3. Always save to database so we can see in dashboard
+        # 3. Send to Pinterest if configured
+        pinterest_sent = False
+        try:
+            from .services.pinterest_api import PinterestAPI
+            pin_api = PinterestAPI()
+            if pin_api.is_configured():
+                pinterest_sent = pin_api.create_pin(
+                    title=deal.get('title', ''),
+                    price=float(deal.get('new_price', 0)),
+                    old_price=float(deal.get('old_price', 0) or 0),
+                    affiliate_url=affiliate_url,
+                    image_url=deal.get('image_url'),
+                    category=category,
+                    store=store_name,
+                    coupon_code=deal.get('coupon_code')
+                )
+        except Exception as pe:
+            logger.debug(f"Pinterest post skipped: {pe}")
+
+        # 4. Always save to database so we can see in dashboard
         # But log the delivery status
         save_deal(
             external_id=external_id,

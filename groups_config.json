@@ -2,7 +2,7 @@
   "category_routing": {
     "enabled": true,
     "send_to_telegram": true,
-    "send_to_whatsapp": false,
+    "send_to_whatsapp": true,
     "niche_mode": true
   },
   "telegram_groups": {

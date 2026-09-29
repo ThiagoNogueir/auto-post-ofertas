@@ -50,7 +50,9 @@ class EvolutionAPI:
             
             payload = {
                 'number': group_id,
-                'text': text
+                'textMessage': {
+                    'text': text
+                }
             }
             
             response = requests.post(url, json=payload, headers=headers, timeout=10)
@@ -83,9 +85,11 @@ class EvolutionAPI:
             
             payload = {
                 'number': group_id,
-                'mediatype': 'image',
-                'media': image_url,
-                'caption': caption
+                'mediaMessage': {
+                    'mediatype': 'image',
+                    'media': image_url,
+                    'caption': caption
+                }
             }
             logger.info(f"Sending WhatsApp Image to {url} | Group: {group_id} | Media: {image_url}")
             
