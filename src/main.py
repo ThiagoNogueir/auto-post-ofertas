@@ -11,8 +11,7 @@ from typing import List, Dict
 from dotenv import load_dotenv
 
 from .database import init_database, is_deal_processed, save_deal
-from .database import init_database, is_deal_processed, save_deal
-from .services import validate_deal, send_deal, send_notification, send_deal_to_whatsapp
+from .services import validate_deal, send_deal, send_notification, send_deal_to_whatsapp, validate_deal_for_whatsapp_group
 import json
 from .utils.helpers import extract_product_id
 
@@ -30,8 +29,8 @@ def fetch_raw_data(url: str) -> str:
 TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
 CASA_CATEGORIES = {'Casa', 'Construção'}
 BELEZA_CATEGORIES = {'Beleza', 'Saúde'}
-MERCADO_CATEGORIES = {'Bebidas', 'Alimentos'}
-MODA_CATEGORIES = {'Moda', 'Esportes'}
+MERCADO_CATEGORIES = {'Bebidas', 'Alimentos', 'Esportes'}
+MODA_CATEGORIES = {'Moda'}
 PETS_CATEGORIES = {'Pets'}
 KIDS_CATEGORIES = {'Bebês', 'Brinquedos'}
 AUTO_CATEGORIES = {'Ferramentas', 'Automotivo'}
@@ -198,21 +197,30 @@ def process_deal(deal: Dict) -> bool:
                     logger.info(f"{store_name} product - Using WhatsApp group: {group_id or 'none'}")
                 
                 if group_id:
-                    logger.info(f"Sending to WhatsApp Group: {group_id}")
-                    wa_result = send_deal_to_whatsapp(
+                    # Sanity Gatekeeper: Block any out-of-niche leaks before WhatsApp dispatch
+                    is_safe, block_reason = validate_deal_for_whatsapp_group(
                         group_id=group_id,
                         title=deal.get('title', ''),
-                        price=float(deal.get('new_price', 0)),
-                        old_price=float(deal.get('old_price', 0) or 0),
-                        url=affiliate_url,
-                        image_url=deal.get('image_url'),
-                        store=store_name
+                        category=category
                     )
-                    if wa_result:
-                        whatsapp_sent = True
-                        logger.info("WhatsApp send SUCCESS")
+                    if not is_safe:
+                        logger.warning(f"🚫 [GATEKEEPER BLOCKED] WhatsApp dispatch cancelled! Reason: {block_reason} | Deal: '{deal_title}' | Group: {group_id}")
                     else:
-                        logger.error("WhatsApp send FAILED (API returned False)")
+                        logger.info(f"Sending to WhatsApp Group: {group_id}")
+                        wa_result = send_deal_to_whatsapp(
+                            group_id=group_id,
+                            title=deal.get('title', ''),
+                            price=float(deal.get('new_price', 0)),
+                            old_price=float(deal.get('old_price', 0) or 0),
+                            url=affiliate_url,
+                            image_url=deal.get('image_url'),
+                            store=store_name
+                        )
+                        if wa_result:
+                            whatsapp_sent = True
+                            logger.info("WhatsApp send SUCCESS")
+                        else:
+                            logger.error("WhatsApp send FAILED (API returned False)")
                 else:
                     logger.warning(f"No WhatsApp group configured for {store_name} - {category}")
             except Exception as e:

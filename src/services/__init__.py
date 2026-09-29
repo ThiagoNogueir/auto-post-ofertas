@@ -4,6 +4,7 @@ from .simple_affiliate import generate_simple_link
 from .telegram_bot import send_deal, send_notification
 from .evolution_api import send_deal_to_whatsapp
 from .telegram_subscriber_bot import start_subscriber_listener_thread
+from .gatekeeper import validate_deal_for_whatsapp_group
 
 __all__ = [
     'extract_deals_from_text',
@@ -12,5 +13,6 @@ __all__ = [
     'send_deal',
     'send_notification',
     'send_deal_to_whatsapp',
-    'start_subscriber_listener_thread'
+    'start_subscriber_listener_thread',
+    'validate_deal_for_whatsapp_group'
 ]
