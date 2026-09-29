@@ -10,7 +10,10 @@ import json
 import hashlib
 import requests
 from typing import Optional, List, Dict
+from dotenv import load_dotenv
 from ..utils.logger import logger
+
+load_dotenv()
 
 
 class ShopeeAffiliateAPI:

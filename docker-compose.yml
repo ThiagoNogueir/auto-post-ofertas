@@ -14,6 +14,8 @@ services:
       - ./ml_linkbuilder_cookies.pkl:/app/ml_linkbuilder_cookies.pkl
       - ./src:/app/src
       - ./.env:/app/.env
+    env_file:
+      - .env
     environment:
       - PORT=5000
       - CHROME_BIN=/usr/bin/google-chrome
