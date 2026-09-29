@@ -112,8 +112,11 @@ def process_deal(deal: Dict) -> bool:
         is_tech = category in TECH_CATEGORIES
         is_casa = category in CASA_CATEGORIES
         
+        wa_groups = groups_config.get('whatsapp_groups', {})
+        has_wa_tech_group = is_tech and (category in wa_groups or 'Informática' in wa_groups)
+
         can_send_telegram = send_telegram and (is_tech or not niche_mode)
-        can_send_whatsapp = send_whatsapp and (is_casa or not niche_mode)
+        can_send_whatsapp = send_whatsapp and (is_casa or has_wa_tech_group or not niche_mode)
         
         # 1. Send to Telegram if enabled and matches Tech niche
         if can_send_telegram:
