@@ -12,6 +12,7 @@ services:
       - ./groups_config.json:/app/groups_config.json
       - ./coupon_config.json:/app/coupon_config.json
       - ./ml_linkbuilder_cookies.pkl:/app/ml_linkbuilder_cookies.pkl
+      - ./src:/app/src
       - ./.env:/app/.env
     environment:
       - PORT=5000
