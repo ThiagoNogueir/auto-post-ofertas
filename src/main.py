@@ -28,7 +28,7 @@ def fetch_raw_data(url: str) -> str:
     return fetch_html_selenium(url)
 
 TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
-CASA_CATEGORIES = {'Casa', 'Bebidas', 'Beleza'}
+CASA_CATEGORIES = {'Casa', 'Bebidas', 'Beleza', 'Alimentos'}
 
 def process_deal(deal: Dict) -> bool:
     """

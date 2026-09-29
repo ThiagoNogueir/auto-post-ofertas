@@ -52,6 +52,10 @@ class EvolutionAPI:
                 'number': group_id,
                 'textMessage': {
                     'text': text
+                },
+                'options': {
+                    'delay': 2000,
+                    'presence': 'composing'
                 }
             }
             
@@ -89,6 +93,10 @@ class EvolutionAPI:
                     'mediatype': 'image',
                     'media': image_url,
                     'caption': caption
+                },
+                'options': {
+                    'delay': 2500,
+                    'presence': 'composing'
                 }
             }
             logger.info(f"Sending WhatsApp Image to {url} | Group: {group_id} | Media: {image_url}")
