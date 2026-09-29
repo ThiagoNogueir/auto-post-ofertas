@@ -49,6 +49,9 @@ test_suite = [
     ("Azeite de Oliva Extra Virgem Andorinha 500ml", GROUP_MERCADO, True, "Olive oil should pass Mercado"),
     ("Vestido Midi Floral", GROUP_MERCADO, False, "Dress must be blocked from Mercado"),
     ("Smartphone Xiaomi Redmi Note 13 128GB", GROUP_MERCADO, False, "Phone must be blocked from Mercado"),
+    ("Bicicleta Ergométrica Spinning Inércia 5kg Velocron V500 Preto", GROUP_MERCADO, False, "Spinning bike must be blocked from Mercado"),
+    ("Bicicleta Ergométrica Spinning Inércia 5kg Velocron V500 Preto", GROUP_MODA, False, "Spinning bike must be blocked from Moda"),
+    ("Bicicleta Ergométrica Spinning Inércia 5kg Velocron V500 Preto", GROUP_CASA, False, "Spinning bike must be blocked from Casa"),
 
     # 5. PET SHOP Group tests (Strict positive requirement)
     ("Ração Royal Canin Golden Retriever Adulto 15kg", GROUP_PETS, True, "Pet food should pass Pet Shop"),

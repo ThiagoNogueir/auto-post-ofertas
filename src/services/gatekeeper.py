@@ -61,7 +61,9 @@ MODA_FORBIDDEN = [
     'placa de video', 'placa mae', 'rtx 30', 'rtx 40', 'rx 6', 'rx 7', 'ryzen 5', 'ryzen 7',
     'core i5', 'core i7', 'memoria ram', 'ssd nvme', 'playstation', 'ps5', 'xbox series', 'nintendo switch',
     # Móveis & Eletrodomésticos Grandes
-    'fogao', 'geladeira', 'refrigerador', 'freezer', 'microondas', 'maquina de lavar', 'ar condicionado', 'sofa', 'colchao'
+    'fogao', 'geladeira', 'refrigerador', 'freezer', 'microondas', 'maquina de lavar', 'ar condicionado', 'sofa', 'colchao',
+    # Aparelhos de Academia
+    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica', 'banco de supino'
 ]
 
 # 2. CASA & DECORAÇÃO - Forbidden terms (NEVER allow apparel/fashion, supplements, PC hardware, auto parts)
@@ -80,7 +82,9 @@ CASA_FORBIDDEN = [
     # Automotivo
     'pneu aro', 'pastilha de freio', 'amortecedor', 'oleo 5w30', 'bateria automotiva', 'escapamento',
     # Pets
-    'racao para', 'racao cachorro', 'racao gato', 'bravecto', 'nexgard', 'simparic', 'pipicat'
+    'racao para', 'racao cachorro', 'racao gato', 'bravecto', 'nexgard', 'simparic', 'pipicat',
+    # Aparelhos de Academia Pesados
+    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica'
 ]
 
 # 3. TECNOLOGIA & GAMES - Forbidden terms (NEVER allow clothing, food, grocery, cleaning, cosmetics)
@@ -100,12 +104,21 @@ BELEZA_FORBIDDEN = [
     'furadeira', 'esmerilhadeira', 'cerveja', 'whisky', 'vinho'
 ]
 
-# 5. MERCADO & BEBIDAS - Forbidden terms (NEVER allow clothing, tech hardware, tools, furniture)
+# 5. MERCADO & BEBIDAS - Forbidden terms (NEVER allow clothing, tech hardware, tools, furniture, gym equipment)
 MERCADO_FORBIDDEN = [
+    # Roupas e Calçados
     'vestido', 'saia', 'cueca', 'calcinha', 'sutia', 'calca jeans', 'bermuda jeans',
     'tenis casual', 'sapato social', 'chinelo slide', 'bolsa feminina', 'carteira couro',
+    # Informática & Eletrônicos
     'notebook', 'smartphone', 'iphone', 'placa de video', 'smart tv', 'teclado gamer',
-    'monitor 144hz', 'mousepad', 'furadeira', 'parafusadeira', 'esmerilhadeira', 'sofa', 'fogao'
+    'monitor 144hz', 'mousepad',
+    # Ferramentas & Casa Pesada
+    'furadeira', 'parafusadeira', 'esmerilhadeira', 'sofa', 'fogao',
+    # Aparelhos de Academia & Equipamentos Esportivos (NUNCA em Mercado)
+    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica',
+    'esteira ergométrica', 'esteira eletrica', 'esteira elétrica', 'halteres', 'anilha', 'kettlebell',
+    'banco de supino', 'estacao de musculacao', 'estação de musculação', 'barra fixa', 'patins',
+    'skate', 'mountain bike', 'bola de futebol', 'bola de basquete', 'raquete de tenis', 'beach tennis'
 ]
 
 # 6. PET SHOP - STRICT REQUIREMENT: Must contain an animal / pet term

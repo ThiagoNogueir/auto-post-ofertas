@@ -29,7 +29,7 @@ def fetch_raw_data(url: str) -> str:
 TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
 CASA_CATEGORIES = {'Casa', 'Construção'}
 BELEZA_CATEGORIES = {'Beleza', 'Saúde'}
-MERCADO_CATEGORIES = {'Bebidas', 'Alimentos', 'Esportes'}
+MERCADO_CATEGORIES = {'Bebidas', 'Alimentos'}
 MODA_CATEGORIES = {'Moda'}
 PETS_CATEGORIES = {'Pets'}
 KIDS_CATEGORIES = {'Bebês', 'Brinquedos'}
