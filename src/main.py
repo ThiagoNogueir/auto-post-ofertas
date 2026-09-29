@@ -26,13 +26,15 @@ def fetch_raw_data(url: str) -> str:
     """
     return fetch_html_selenium(url)
 
-TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
+from .services.ai_classifier import classify_deal
+
+TECH_CATEGORIES = {'Tech', 'Celulares', 'Informática', 'Eletrônicos', 'Games'}
 CASA_CATEGORIES = {'Casa', 'Construção'}
 BELEZA_CATEGORIES = {'Beleza', 'Saúde'}
-MERCADO_CATEGORIES = {'Bebidas', 'Alimentos'}
+MERCADO_CATEGORIES = {'Mercado', 'Bebidas', 'Alimentos'}
 MODA_CATEGORIES = {'Moda'}
 PETS_CATEGORIES = {'Pets'}
-KIDS_CATEGORIES = {'Bebês', 'Brinquedos'}
+KIDS_CATEGORIES = {'Bebes', 'Bebês', 'Brinquedos'}
 AUTO_CATEGORIES = {'Ferramentas', 'Automotivo'}
 ALL_NICHES = TECH_CATEGORIES | CASA_CATEGORIES | BELEZA_CATEGORIES | MERCADO_CATEGORIES | MODA_CATEGORIES | PETS_CATEGORIES | KIDS_CATEGORIES | AUTO_CATEGORIES
 
@@ -110,7 +112,10 @@ def process_deal(deal: Dict) -> bool:
         send_whatsapp = routing.get('send_to_whatsapp', False)
         niche_mode = routing.get('niche_mode', True)
         
-        category = deal.get('category', 'Outros')
+        # AI Semantic Categorization: determine true product niche via Groq LLM (with regex fallback)
+        parsed_category = deal.get('category', 'Outros')
+        category = classify_deal(deal_title, fallback_category=parsed_category)
+        deal['category'] = category
         
         # In niche mode, skip items that couldn't be classified into one of the curated niches
         if category == 'Outros' or category not in ALL_NICHES:
