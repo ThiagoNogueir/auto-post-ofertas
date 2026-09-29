@@ -193,10 +193,13 @@ def generate_shopee_link(url: str) -> str:
     except Exception as e:
         logger.debug(f"Selenium Shopee LinkBuilder fallback failed: {e}")
 
-    # 3. Universal Affiliate ID / tracking parameter
+    # 3. Universal Affiliate ID / official Shopee tracking parameters
     affiliate_id = os.getenv("SHOPEE_AFFILIATE_ID", "").strip()
     if affiliate_id:
         separator = "&" if "?" in url else "?"
-        return f"{url}{separator}aff_id={affiliate_id}&utm_source=affiliate"
+        # Shopee affiliate tracking: utm_source=an_{aff_id}&utm_medium=affiliates
+        tracking_url = f"{url}{separator}utm_source=an_{affiliate_id}&utm_medium=affiliates&utm_campaign=-&utm_content=promobot&aff_id={affiliate_id}"
+        logger.info(f"Generated Shopee tracking link with AID: {affiliate_id}")
+        return tracking_url
         
     return url
