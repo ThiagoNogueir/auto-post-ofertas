@@ -302,15 +302,18 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     if match_any(smartwatch_kw, t_norm):
         return 'Eletrônicos'
 
-    # 2. Bebês & Maternidade (Checked before Moda to prevent baby clothes/backpacks from going to adult fashion)
+    # 2. Bebês & Maternidade (Checked before Moda to prevent baby/kids clothes from going to adult fashion)
     bebes_kw = [
-        'fralda', 'fraldas', 'pampers', 'huggies', 'mamadeira', 'chupeta', 'mordedor bebe',
-        'mordedor infantil', 'lenco umedecido', 'lenço umedecido', 'toalha umedecida',
-        'carrinho de bebe', 'carrinho de bebê', 'carrinho de passeio bebe', 'bebe conforto',
-        'bebê conforto', 'berco', 'berço', 'chiqueirinho', 'banheira bebe', 'aspirador nasal',
-        'babador', 'body bebe', 'macacao bebe', 'macacão bebê', 'cueiro', 'ninho redutor',
+        'bebe', 'bebê', 'bebes', 'bebês', 'infantil', 'infantis', 'recem nascido', 'recem-nascido',
+        'recém nascido', 'recém-nascido', 'maternidade', 'enxoval', 'fralda', 'fraldas',
+        'pampers', 'huggies', 'mamadeira', 'chupeta', 'mordedor', 'lenco umedecido', 'lenço umedecido',
+        'toalha umedecida', 'carrinho de bebe', 'carrinho de bebê', 'carrinho de passeio bebe',
+        'bebe conforto', 'bebê conforto', 'berco', 'berço', 'chiqueirinho', 'banheira bebe',
+        'aspirador nasal', 'babador', 'body bebe', 'body infantil', 'macacao bebe', 'macacão bebê',
+        'macacao infantil', 'vestido bebe', 'vestido infantil', 'cueiro', 'ninho redutor',
         'mochila maternidade', 'bolsa maternidade', 'trocador portatil', 'porta chupeta',
-        'copo de transicao', 'esterilizador de mamadeira'
+        'copo de transicao', 'esterilizador de mamadeira', 'cadeirinha para auto', 'pagaozinho',
+        'mijaozinho', 'mijãozinho', 'tapa fralda', 'culote bebe', 'pantufa bebe', 'sapatinho bebe'
     ]
     if match_any(bebes_kw, t_norm):
         return 'Bebês'

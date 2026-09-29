@@ -63,7 +63,11 @@ MODA_FORBIDDEN = [
     # Móveis & Eletrodomésticos Grandes
     'fogao', 'geladeira', 'refrigerador', 'freezer', 'microondas', 'maquina de lavar', 'ar condicionado', 'sofa', 'colchao',
     # Aparelhos de Academia
-    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica', 'banco de supino'
+    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica', 'banco de supino',
+    # Bebês, Crianças & Maternidade (NUNCA em Moda Adulto)
+    'bebe', 'bebes', 'bebê', 'bebês', 'infantil', 'recem nascido', 'recem-nascido', 'recém nascido',
+    'recém-nascido', 'maternidade', 'enxoval bebe', 'body bebe', 'macacao bebe', 'vestido bebe',
+    'fralda', 'chupeta', 'mamadeira'
 ]
 
 # 2. CASA & DECORAÇÃO - Forbidden terms (NEVER allow apparel/fashion, supplements, PC hardware, auto parts)

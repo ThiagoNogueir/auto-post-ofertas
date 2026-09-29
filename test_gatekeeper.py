@@ -25,6 +25,7 @@ test_suite = [
     ("Furadeira e Parafusadeira Bosch 12V", GROUP_MODA, False, "Power tools must be blocked from Moda"),
     ("Ração Premier Pet Cães Adultos 15kg", GROUP_MODA, False, "Pet food must be blocked from Moda"),
     ("Placa de Vídeo RTX 4060 8GB GDDR6", GROUP_MODA, False, "GPU must be blocked from Moda"),
+    ("Vestido Bebê Menina Malha Waffle Manga Longa Blue 6-9m", GROUP_MODA, False, "Baby dress must be blocked from Moda"),
 
     # 2. CASA & DECORAÇÃO Group tests
     ("Fritadeira Sem Óleo Air Fryer Mondial 4L Inox", GROUP_CASA, True, "Air fryer should pass Casa"),
@@ -63,6 +64,7 @@ test_suite = [
     # 6. BEBÊS & BRINQUEDOS Group tests
     ("Fralda Pampers Confort Sec Mega G 72 Tiras", GROUP_BEBES, True, "Diapers should pass Bebês"),
     ("Boneca Barbie Fashionista Vestido Rosa", GROUP_BEBES, True, "Barbie should pass Bebês"),
+    ("Vestido Bebê Menina Malha Waffle Manga Longa Blue 6-9m", GROUP_BEBES, True, "Baby dress should pass Bebês"),
     ("Cerveja Corona Extra 330ml Pack com 6", GROUP_BEBES, False, "Alcohol must be blocked from Bebês"),
     ("Whey Protein Dark Lab", GROUP_BEBES, False, "Adult supplements must be blocked from Bebês"),
 
