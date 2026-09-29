@@ -436,8 +436,8 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         'banco de supino', 'esteira ergometrica', 'esteira ergométrica', 'bicicleta ergometrica',
         'bicicleta aro', 'mountain bike', 'corda de pular', 'faixa elastica', 'caneleira peso',
         'luva de boxe', 'saco de pancada', 'bola de futebol', 'bola de basquete', 'bola de volei',
-        'raquete de tenis', 'raquete de beach tennis', 'patins', 'skate', 'whey protein',
-        'creatina monohidratada', 'creatina 100%', 'bcaa', 'glutamina', 'pre-treino'
+        'raquete de tenis', 'raquete de beach tennis', 'patins', 'skate', 'whey protein', 'whey',
+        'creatina monohidratada', 'creatina 100%', 'creatina', 'bcaa', 'glutamina', 'pre-treino'
     ]
     if match_any(esportes_kw, t_norm):
         return 'Esportes'
