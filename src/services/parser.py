@@ -25,9 +25,9 @@ def extract_deals_from_html(html_content: str, source_url: str) -> List[Dict]:
     
     try:
         if 'mercadolivre.com' in source_url:
-            deals = parse_mercadolivre(soup)
+            deals = parse_mercadolivre(soup, source_url=source_url)
         elif 'shopee.com' in source_url:
-            deals = parse_shopee(soup)
+            deals = parse_shopee(soup, source_url=source_url)
             
         logger.info(f"Parser extracted {len(deals)} deals from {source_url}")
         return deals
@@ -35,7 +35,7 @@ def extract_deals_from_html(html_content: str, source_url: str) -> List[Dict]:
         logger.error(f"Error parsing HTML: {e}")
         return []
 
-def parse_mercadolivre(soup: BeautifulSoup) -> List[Dict]:
+def parse_mercadolivre(soup: BeautifulSoup, source_url: str = "") -> List[Dict]:
     items = []
     
     # Debug: Log HTML snippet to understand structure
@@ -185,7 +185,7 @@ def parse_mercadolivre(soup: BeautifulSoup) -> List[Dict]:
                         image_url = src
 
             # CATEGORY DETECTION
-            category = detect_category(title, original_url)
+            category = detect_category(title, original_url, source_url=source_url)
 
             logger.debug(f"Found deal: {title} - R$ {new_price} (Old: {old_price}, {discount_pct}% OFF) [{category}]")
             
@@ -206,7 +206,7 @@ def parse_mercadolivre(soup: BeautifulSoup) -> List[Dict]:
     logger.info(f"Successfully parsed {len(items)} deals from Mercado Livre")
     return items
 
-def parse_shopee(soup: BeautifulSoup) -> List[Dict]:
+def parse_shopee(soup: BeautifulSoup, source_url: str = "") -> List[Dict]:
     items = []
     # Generic selectors for Shopee item cards
     cards = soup.select('li[data-sqe="item"]') or \
@@ -249,7 +249,7 @@ def parse_shopee(soup: BeautifulSoup) -> List[Dict]:
             image_url = img_tag.get('src') if img_tag else None
             
             # CATEGORY
-            category = detect_category(title, original_url)
+            category = detect_category(title, original_url, source_url=source_url)
             
             items.append({
                 'title': title,
@@ -265,29 +265,46 @@ def parse_shopee(soup: BeautifulSoup) -> List[Dict]:
             
     return items
 
-def detect_category(title: str, url: str) -> str:
+def detect_category(title: str, url: str, source_url: str = "") -> str:
     """
-    Infers category from URL segments and title keywords.
-    Accurately supports top selling e-commerce categories:
-    Celulares, Informática, Eletrônicos, Games, Casa, Bebidas, Beleza, Moda, Ferramentas, Automotivo.
+    Infers category from URL segments and title keywords with regex word boundaries.
+    Prevents cross-category substring collisions (e.g. 'geração' matching 'ração', 'autônomo' matching 'omo').
+    Supports all 24 Mercado Livre sidebar categories and routes to proper groups.
     """
     import unicodedata
+    import re
+
     def strip_accents(text: str) -> str:
         return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
 
+    def match_any(keywords: list, text: str) -> bool:
+        for k in keywords:
+            kn = strip_accents(k.lower()).strip()
+            if not kn:
+                continue
+            pattern = r'\b' + re.escape(kn) + r'\b'
+            if re.search(pattern, text):
+                return True
+        return False
+
     url_lower = url.lower()
-    title_lower = title.lower()
-    t_norm = strip_accents(title_lower)
-    u_norm = strip_accents(url_lower)
-    
-    # 1. URL Based Detection (Strongest Signal)
+    source_lower = source_url.lower()
+    combined_url = f"{url_lower} {source_lower}"
+    t_norm = strip_accents(title.lower())
+    u_norm = strip_accents(combined_url)
+
+    # 1. URL Category IDs (Strongest Signal from category URLs)
     if 'category=mlb1071' in u_norm or '/animais/' in u_norm or '/pets/' in u_norm or '/pet-shop/' in u_norm:
         return 'Pets'
-    if 'celulares-telefones' in u_norm or 'celular' in u_norm or 'category=mlb1051' in u_norm:
+    if 'category=mlb1384' in u_norm or '/bebes/' in u_norm:
+        return 'Bebês'
+    if 'category=mlb1132' in u_norm or '/brinquedos-hobbies/' in u_norm or '/brinquedos/' in u_norm:
+        return 'Brinquedos'
+    if 'category=mlb1051' in u_norm or 'celulares-telefones' in u_norm:
         return 'Celulares'
-    if 'informatica' in u_norm or 'computadores' in u_norm or 'category=mlb1648' in u_norm:
+    if 'category=mlb1648' in u_norm or 'informatica' in u_norm or 'computadores' in u_norm:
         return 'Informática'
-    if 'consoles-video-games' in u_norm or '/games/' in u_norm or 'video-games' in u_norm or 'category=mlb1144' in u_norm:
+    if 'category=mlb1144' in u_norm or 'consoles-video-games' in u_norm or '/games/' in u_norm:
         return 'Games'
     if 'category=mlb278123' in u_norm or 'category=mlb1403' in u_norm or '/bebidas/' in u_norm or '/alimentos-bebidas/' in u_norm:
         return 'Bebidas'
@@ -305,147 +322,180 @@ def detect_category(title: str, url: str) -> str:
         return 'Automotivo'
     if 'category=mlb1512' in u_norm or '/construcao/' in u_norm:
         return 'Construção'
-    if 'category=mlb1384' in u_norm or '/bebes/' in u_norm:
-        return 'Bebês'
-    if 'category=mlb1132' in u_norm or '/brinquedos-hobbies/' in u_norm or '/brinquedos/' in u_norm:
-        return 'Brinquedos'
-    if 'eletrodomesticos' in u_norm or 'casa-moveis' in u_norm or 'cama-mesa-banho' in u_norm or 'category=mlb1499' in u_norm or 'category=mlb1574' in u_norm or 'category=mlb5726' in u_norm:
+    if 'category=mlb1499' in u_norm or 'category=mlb1574' in u_norm or 'category=mlb5726' in u_norm or 'eletrodomesticos' in u_norm or 'casa-moveis' in u_norm or 'cama-mesa-banho' in u_norm:
         return 'Casa'
-    if 'eletronicos-audio' in u_norm or 'tv-audio' in u_norm or 'category=mlb1000' in u_norm or 'category=mlb1039' in u_norm:
+    if 'category=mlb1000' in u_norm or 'category=mlb1039' in u_norm or 'eletronicos-audio' in u_norm or 'tv-audio' in u_norm:
         return 'Eletrônicos'
 
-    # 2. Pets & Animais (Title Keywords)
-    pets_keywords = [
-        'racao', 'ração', 'premier pet', 'royal canin', 'golden especial', 'whiskas', 'pedigree',
-        'quatree', 'bravecto', 'nexgard', 'simparic', 'antipulgas', 'antipulga', 'carrapato',
-        'vermifugo', 'vermífugo', 'tapete higienico', 'tapete higiênico', 'caminha pet', 'cama pet',
-        'cama para cachorro', 'arranhador', 'areia para gato', 'areia higienica', 'areia higiênica',
-        'pipicat', 'comedouro', 'bebedouro pet', 'fonte pet', 'coleira', 'guia para cachorro',
-        'peitoral cachorro', 'peitoral pet', 'brinquedo para cachorro', 'brinquedo pet', 'brinquedo para gato',
-        'gaiola', 'aquario', 'aquário', 'shampoo pet', 'filhote cao', 'filhote cão', 'filhote cachorro',
-        'gatos castrados', 'petisco para caes', 'petisco para cachorro', 'petisco caes', 'churu',
-        'pet shop', 'focinheira', 'mordedor pet', 'mordedor natural', 'petiscos'
-    ]
-    if any(k in t_norm for k in pets_keywords):
-        return 'Pets'
-
-    # 2. Bebidas & Alimentos / Mercado (Title Keywords)
-    bebidas_keywords = [
-        'vinho', 'espumante', 'prosecco', 'cerveja', 'chope', 'whisky', 'whiskey', 'vodka',
-        'gin ', 'licor', 'tequila', 'rum ', 'cachaca', 'cachaça', 'refrigerante', 'coca-cola',
-        'pepsi', 'guarana antarctica', 'energetico', 'energético', 'red bull', 'monster energy',
-        'isotonico', 'isotônico', 'powerade', 'gatorade', 'agua mineral', 'água mineral',
-        'azeite de oliva', 'azeite extra virgem', 'cafe em grao', 'café em grão',
-        'capsulas de cafe', 'cápsulas de café', 'nespresso', 'dolce gusto',
-        'whey protein', 'whey 100%', 'creatina monohidratada', 'creatina'
-    ]
-    if any(k in t_norm for k in bebidas_keywords):
-        return 'Bebidas'
-
-    # 3. Beleza & Perfumaria (Title Keywords)
-    beleza_keywords = [
-        'perfume', 'eau de parfum', 'eau de toilette', 'desodorante', 'hidratante corporal',
-        'serum facial', 'sérum', 'protetor solar', 'shampoo', 'condicionador', 'mascara capilar',
-        'secador de cabelo', 'prancha alisadora', 'chapinha', 'babyliss', 'modelador de cachos',
-        'barbeador eletrico', 'aparador de pelos', 'maquiagem', 'batom', 'rimel', 'base facial',
-        'esmalte', 'carolina herrera', 'paco rabanne', 'la roche-posay', 'cerave'
-    ]
-    if any(k in t_norm for k in beleza_keywords):
-        return 'Beleza'
-
-    # 4. Ferramentas & Construção (Title Keywords)
-    ferramentas_keywords = [
-        'furadeira', 'parafusadeira', 'esmerilhadeira', 'serra circular', 'serra tico-tico',
-        'martelete', 'compressor de ar', 'lavadora de alta pressao', 'lavadora de alta pressão',
-        'karcher', 'wap', 'maleta de ferramentas', 'caixa de ferramentas', 'jogo de chaves',
-        'chave de fenda', 'chave philips', 'chave combinada', 'chave catraca', 'trena',
-        'nivel laser', 'nível laser', 'alicate universal', 'inversora de solda', 'bosch',
-        'dewalt', 'makita', 'vonder'
-    ]
-    if any(k in t_norm for k in ferramentas_keywords):
-        return 'Ferramentas'
-
-    # 5. Moda & Calçados (Title Keywords)
-    moda_keywords = [
-        'tenis', 'tênis', 'sapato', 'sapatilha', 'sandalia', 'sandália', 'chinelo',
-        'bota', 'coturno', 'camisa polo', 'camiseta', 'calca jeans', 'calça jeans',
-        'bermuda', 'shorts', 'jaqueta', 'moletom', 'vestido', 'saia', 'cueca', 'calcinha',
-        'sutia', 'sutiã', 'mochila', 'bolsa feminina', 'carteira masculina',
-        'oculos de sol', 'óculos de sol', 'relogio masculino', 'relogio feminino',
-        'nike', 'adidas', 'olympikus', 'asics', 'mizuno'
-    ]
-    if any(k in t_norm for k in moda_keywords):
-        return 'Moda'
-
-    # 6. Automotivo (Title Keywords)
-    automotivo_keywords = [
-        'pneu ', 'pneus', 'som automotivo', 'central multimidia', 'central multimídia',
-        'lampada led h4', 'lampada led h7', 'farol de milha', 'bateria de carro', 'bateria automotiva',
-        'moura', 'heliar', 'oleo para motor', 'óleo para motor', 'oleo 5w30', 'oleo 15w40',
-        'capacete para moto', 'capacete moto', 'capa para carro', 'alarme automotivo',
-        'camera de re', 'câmera de ré', 'rastreador veicular', 'suporte veicular'
-    ]
-    if any(k in t_norm for k in automotivo_keywords):
-        return 'Automotivo'
-
-    # 7. Smartwatches & Wearables (Technology & Games)
-    smartwatch_keywords = [
+    # 2. Smartwatches & Wearables -> Eletrônicos (Tech & Games)
+    smartwatch_kw = [
         'smartwatch', 'smart watch', 'apple watch', 'galaxy watch', 'relogio smartwatch',
         'relógio smartwatch', 'pulseira inteligente', 'mi band', 'amazfit', 'haylou',
         'huawei watch', 'fitbit', 'garmin', 'relogio inteligente', 'relógio inteligente'
     ]
-    if any(k in t_norm for k in smartwatch_keywords):
+    if match_any(smartwatch_kw, t_norm):
         return 'Eletrônicos'
 
-    # Relógio Tradicional (Moda)
-    relogio_moda = [
-        'relogio masculino', 'relógio masculino', 'relogio feminino', 'relógio feminino',
-        'relogio de pulso', 'relógio de pulso', 'relogio casio', 'relogio seiko',
-        'relogio orient', 'relogio invicta', 'relogio technos', 'relogio champion'
+    # 3. Bebês & Maternidade (Checked before Moda to prevent baby clothes/backpacks from going to adult fashion)
+    bebes_kw = [
+        'fralda', 'fraldas', 'pampers', 'huggies', 'mamadeira', 'chupeta', 'mordedor bebe',
+        'mordedor infantil', 'lenco umedecido', 'lenço umedecido', 'toalha umedecida',
+        'carrinho de bebe', 'carrinho de bebê', 'carrinho de passeio bebe', 'bebe conforto',
+        'bebê conforto', 'berco', 'berço', 'chiqueirinho', 'banheira bebe', 'aspirador nasal',
+        'babador', 'body bebe', 'macacao bebe', 'macacão bebê', 'cueiro', 'ninho redutor',
+        'mochila maternidade', 'bolsa maternidade', 'trocador portatil', 'porta chupeta',
+        'copo de transicao', 'esterilizador de mamadeira'
     ]
-    if any(k in t_norm for k in relogio_moda):
+    if match_any(bebes_kw, t_norm):
+        return 'Bebês'
+
+    # 4. Brinquedos & Hobbies (Checked before Moda to prevent Barbie dresses/shoes from going to adult fashion)
+    brinquedos_kw = [
+        'boneca', 'boneco', 'barbie', 'baby alive', 'polly pocket', 'hot wheels', 'lego',
+        'playmobil', 'nerf', 'massinha play-doh', 'play-doh', 'carrinho de controle remoto',
+        'carrinho controle remoto', 'pista hot wheels', 'quebra-cabeca', 'quebra-cabeça',
+        'jogo de tabuleiro', 'banco imobiliario', 'cara a cara', 'pelucia', 'pelúcia',
+        'ursinho de pelucia', 'patinete infantil', 'triciclo infantil', 'slime', 'figura de acao',
+        'action figure', 'funko pop', 'pixtoy', 'magic the gathering', 'pokemon tcg'
+    ]
+    if match_any(brinquedos_kw, t_norm):
+        return 'Brinquedos'
+
+    # 5. Pets & Animais (Word boundary eliminates 'geração', 'duração', 'refrigeração', etc.)
+    pets_kw = [
+        'racao', 'ração', 'premier pet', 'royal canin', 'golden especial', 'whiskas', 'pedigree',
+        'quatree', 'bravecto', 'nexgard', 'simparic', 'antipulgas', 'antipulga', 'carrapato',
+        'vermifugo', 'vermífugo', 'tapete higienico', 'tapete higiênico', 'caminha pet', 'cama pet',
+        'cama para cachorro', 'arranhador', 'areia para gato', 'areia higienica', 'pipicat',
+        'comedouro pet', 'bebedouro pet', 'fonte pet', 'coleira', 'guia para cachorro',
+        'peitoral cachorro', 'peitoral pet', 'brinquedo para cachorro', 'brinquedo pet',
+        'brinquedo para gato', 'gaiola', 'aquario', 'aquário', 'shampoo pet', 'filhote cao',
+        'filhote cachorro', 'gatos castrados', 'petisco', 'petiscos', 'churu', 'pet shop',
+        'focinheira', 'mordedor pet', 'granulado sanitario'
+    ]
+    if match_any(pets_kw, t_norm):
+        return 'Pets'
+
+    # 6. Automotivo (Checked before Tools/Informatica to catch car chargers, battery jumpers, etc.)
+    automotivo_kw = [
+        'pneu', 'pneus', 'som automotivo', 'central multimidia', 'central multimídia',
+        'farol de milha', 'lampada led h4', 'lampada led h7', 'bateria de carro', 'bateria automotiva',
+        'moura', 'heliar', 'oleo para motor', 'óleo para motor', 'oleo 5w30', 'oleo 15w40',
+        'capacete para moto', 'capacete moto', 'capa para carro', 'alarme automotivo',
+        'camera de re', 'câmera de ré', 'rastreador veicular', 'suporte veicular',
+        'carregador automotivo', 'carregador veicular', 'carregador de bateria automotivo',
+        'carregador bateria carro', 'palheta parabrisa', 'tapete automotivo', 'calota',
+        'aditivo radiador'
+    ]
+    if match_any(automotivo_kw, t_norm):
+        return 'Automotivo'
+
+    # 7. Casa - Aspiradores & Eletrodomésticos (Checked BEFORE Ferramentas so WAP/Kärcher vacuums go to Casa)
+    casa_eletro_kw = [
+        'aspirador de po', 'aspirador de pó', 'aspirador po', 'aspirador vertical', 'robo aspirador',
+        'robô aspirador', 'aspirador wap', 'aspirador karcher', 'cafeteira', 'air fryer',
+        'fritadeira sem oleo', 'fritadeira eletrica', 'liquidificador', 'batedeira',
+        'sanduicheira', 'micro-ondas', 'microondas', 'fogao', 'fogão', 'cooktop',
+        'forno eletrico', 'forno elétrico', 'geladeira', 'refrigerador', 'freezer',
+        'purificador de agua', 'purificador de água', 'bebedouro de agua', 'chaleira eletrica',
+        'panela de pressao eletrica', 'panela eletrica', 'torradeira', 'ferro de passar',
+        'vaporizador de roupas', 'maquina de lavar', 'máquina de lavar', 'lava e seca',
+        'tanquinho', 'ventilador', 'ar condicionado', 'climatizador de ar', 'umidificador de ar'
+    ]
+    if match_any(casa_eletro_kw, t_norm):
+        return 'Casa'
+
+    # 8. Ferramentas & Construção
+    ferramentas_kw = [
+        'kit ferramentas', 'kit de ferramentas', 'furadeira', 'parafusadeira', 'esmerilhadeira',
+        'serra circular', 'serra tico-tico', 'martelete', 'compressor de ar',
+        'lavadora de alta pressao', 'lavadora alta pressao', 'maleta de ferramentas',
+        'caixa de ferramentas', 'jogo de chaves', 'chave de fenda', 'chave philips',
+        'chave combinada', 'chave catraca', 'trena', 'nivel laser', 'nível laser',
+        'alicate universal', 'alicate de pressao', 'inversora de solda', 'motosserra',
+        'rocadeira', 'disco de corte', 'broca', 'jogo de brocas', 'bosch', 'dewalt', 'makita', 'vonder'
+    ]
+    if match_any(ferramentas_kw, t_norm):
+        return 'Ferramentas'
+
+    # 9. Bebidas & Alimentos / Mercado
+    bebidas_kw = [
+        'vinho', 'espumante', 'prosecco', 'cerveja', 'chope', 'whisky', 'whiskey', 'vodka',
+        'gin', 'licor', 'tequila', 'rum', 'cachaca', 'cachaça', 'refrigerante', 'coca-cola',
+        'pepsi', 'guarana antarctica', 'energetico', 'energético', 'red bull', 'monster energy',
+        'isotonico', 'isotônico', 'powerade', 'gatorade', 'agua mineral', 'água mineral',
+        'azeite de oliva', 'azeite extra virgem', 'cafe em grao', 'café em grão',
+        'capsulas de cafe', 'cápsulas de café', 'nespresso', 'dolce gusto'
+    ]
+    if match_any(bebidas_kw, t_norm):
+        return 'Bebidas'
+
+    # 10. Esportes & Fitness
+    esportes_kw = [
+        'halteres', 'haltere', 'anilha', 'kettlebell', 'barra fixa', 'barra macica',
+        'banco de supino', 'esteira ergometrica', 'esteira ergométrica', 'bicicleta ergometrica',
+        'bicicleta aro', 'mountain bike', 'corda de pular', 'faixa elastica', 'caneleira peso',
+        'luva de boxe', 'saco de pancada', 'bola de futebol', 'bola de basquete', 'bola de volei',
+        'raquete de tenis', 'raquete de beach tennis', 'patins', 'skate', 'whey protein',
+        'creatina monohidratada', 'creatina 100%', 'bcaa', 'glutamina', 'pre-treino'
+    ]
+    if match_any(esportes_kw, t_norm):
+        return 'Esportes'
+
+    # 11. Beleza & Perfumaria
+    beleza_kw = [
+        'perfume', 'eau de parfum', 'eau de toilette', 'desodorante', 'hidratante corporal',
+        'serum facial', 'sérum facial', 'protetor solar', 'shampoo', 'condicionador',
+        'mascara capilar', 'máscara capilar', 'secador de cabelo', 'prancha alisadora',
+        'chapinha', 'babyliss', 'modelador de cachos', 'barbeador eletrico', 'aparador de pelos',
+        'maquiagem', 'batom', 'rimel', 'rímel', 'base facial', 'esmalte', 'carolina herrera',
+        'paco rabanne', 'la roche-posay', 'cerave'
+    ]
+    if match_any(beleza_kw, t_norm):
+        return 'Beleza'
+
+    # 12. Informática - Mochila para Notebook / Acessórios (Checked before general Moda)
+    if 'mochila para notebook' in t_norm or 'mochila notebook' in t_norm:
+        return 'Informática'
+
+    # 13. Moda & Calçados
+    moda_kw = [
+        'tenis', 'tênis', 'sapato', 'sapatilha', 'sandalia', 'sandália', 'chinelo',
+        'bota', 'coturno', 'camisa polo', 'camiseta', 'calca jeans', 'calça jeans',
+        'calca moletom', 'bermuda', 'shorts', 'jaqueta', 'moletom', 'vestido', 'saia',
+        'cueca', 'cuecas', 'calcinha', 'calcinhas', 'sutia', 'sutiã', 'mochila',
+        'bolsa feminina', 'carteira masculina', 'oculos de sol', 'óculos de sol',
+        'relogio masculino', 'relogio feminino', 'relogio de pulso', 'relogio casio',
+        'relogio seiko', 'relogio orient', 'relogio invicta', 'relogio technos',
+        'nike', 'adidas', 'olympikus', 'asics', 'mizuno'
+    ]
+    if match_any(moda_kw, t_norm):
         return 'Moda'
 
-    if 'relogio de parede' in t_norm or 'relógio de parede' in t_norm or 'relogio despertador' in t_norm:
-        return 'Casa'
-
-    # 8. Casa - Kits e Eletrodomésticos
-    casa_kits = [
+    # 14. Casa - Móveis, Cama, Mesa, Banho e Limpeza
+    casa_kw = [
         'jogo de toalha', 'jogo de panela', 'jogo de cama', 'jogo de lencol',
         'jogo de taca', 'jogo de copo', 'jogo de prato', 'jogo de xicara',
-        'jogo de faca', 'jogo de talher', 'jogo de tigela', 'jogo de pote',
-        'jogo de sobremesa', 'jogo de banheiro', 'jogo de cozinha', 'jogo americano', 'sousplat'
+        'jogo de faca', 'jogo de talher', 'toalha de banho', 'edredom', 'cobertor',
+        'lencol', 'lençol', 'travesseiro', 'manta', 'tapete de sala', 'tapete',
+        'cortina', 'almofada', 'colchao', 'colchão', 'cobre leito', 'panela',
+        'faqueiro', 'talher', 'garrafa termica', 'garrafa térmica', 'pote hermetico',
+        'marmita', 'lixeira', 'varal', 'chuveiro', 'torneira', 'guarda-roupa',
+        'sofa', 'sofá', 'poltrona', 'cadeira gamer', 'mesa gamer', 'sabao em po',
+        'sabão em pó', 'sabao liquido', 'sabão líquido', 'amaciante comfort',
+        'amaciante downy', 'detergente ype', 'detergente finish', 'tablete finish',
+        'desinfetante', 'lava roupas omo', 'sabao omo', 'multiuso veja', 'limpador veja'
     ]
-    if any(k in t_norm for k in casa_kits):
+    if match_any(casa_kw, t_norm):
         return 'Casa'
 
-    casa_keywords = [
-        'cafeteira', 'balanca', 'air fryer', 'fritadeira', 'liquidificador', 'batedeira',
-        'sanduicheira', 'micro-ondas', 'microondas', 'fogao', 'cooktop', 'forno eletrico',
-        'geladeira', 'refrigerador', 'freezer', 'purificador', 'bebedouro', 'chaleira',
-        'panela de pressao', 'panela eletrica', 'torradeira', 'aspirador', 'robo aspirador',
-        'ferro de passar', 'vaporizador', 'maquina de lavar', 'lava e seca', 'tanquinho',
-        'ventilador', 'ar condicionado', 'climatizador', 'umidificador', 'toalha', 'edredom',
-        'cobertor', 'lencol', 'travesseiro', 'manta', 'tapete', 'cortina', 'almofada',
-        'colchao', 'cobre leito', 'panela', 'faqueiro', 'talher', 'garrafa termica',
-        'pote hermetico', 'marmita', 'lixeira', 'varal', 'chuveiro', 'torneira', 'guarda-roupa',
-        'sofa ', ' sofá ', 'poltrona', 'sabao em po', 'sabão em pó', 'sabao liquido',
-        'amaciante', 'comfort', 'downy', 'detergente', 'sabao omo', 'sabão omo', 'lava roupas omo',
-        'sabao ype', 'sabão ypê', 'detergente ype', 'detergente ypê', 'desinfetante',
-        'limpeza', 'lava roupas', 'lava loucas', 'lava louças', 'finish', 'multiuso veja',
-        'limpador veja', 'desengordurante veja'
-    ]
-    if any(k in t_norm for k in casa_keywords):
-        return 'Casa'
-
-    # 8. Games - Consoles, Gamer Gear, Gaming Titles
-    games_keywords = [
+    # 15. Games
+    games_kw = [
         'playstation', 'ps5', 'ps4', 'ps3', 'xbox', 'nintendo switch', 'nintendo',
         'switch oled', 'switch lite', 'videogame', 'video game', 'console',
-        'dualsense', 'dualshock', 'joy-con', 'joycon', 'gamepad', 'gamer',
-        'volante g29', 'midia fisica'
+        'dualsense', 'dualshock', 'joy-con', 'joycon', 'gamepad', 'volante g29', 'midia fisica'
     ]
-    if any(k in t_norm for k in games_keywords):
+    if match_any(games_kw, t_norm):
         return 'Games'
 
     if 'jogo ' in t_norm or 'jogos ' in t_norm:
@@ -453,34 +503,33 @@ def detect_category(title: str, url: str) -> str:
             if any(w in t_norm for w in ['ps5', 'ps4', 'xbox', 'switch', 'pc', 'rpg', 'fc 24', 'fc 25', 'fifa', 'gta', 'pokemon', 'mario', 'zelda', 'resident evil', 'spider-man', 'god of war']):
                 return 'Games'
 
-    # 9. Celulares
-    celulares_keywords = [
+    # 16. Celulares
+    celulares_kw = [
         'iphone', 'smartphone', 'celular', 'galaxy s', 'galaxy a', 'galaxy m', 'galaxy z',
-        'redmi', 'xiaomi', 'motorola', 'moto g', 'moto e', 'moto edge', 'poco ', 'realme', 'infinix'
+        'redmi', 'xiaomi', 'motorola', 'moto g', 'moto e', 'moto edge', 'poco', 'realme', 'infinix'
     ]
-    if any(k in t_norm for k in celulares_keywords):
+    if match_any(celulares_kw, t_norm):
         return 'Celulares'
 
-    # 10. Informática
-    informatica_keywords = [
+    # 17. Informática
+    informatica_kw = [
         'notebook', 'laptop', 'macbook', 'computador', 'pc desktop', 'pc gamer', 'monitor',
         'mouse', 'teclado', 'mousepad', 'webcam', 'roteador', 'ssd', 'nvme', 'memoria ram',
-        'placa de video', 'placa-mae', 'placa mae', 'processador ryzen', 'processador intel',
-        'core i3', 'core i5', 'core i7', 'core i9', 'ryzen 5', 'ryzen 7', 'impressora',
-        'baseus', 'ugreen', 'lenovo', 'qcy', 'carregador', 'cabo usb', 'cabo tipo c',
-        'cabo type c', 'cabo lightning', 'carregador gan', 'suporte notebook', 'hub usb'
+        'memória ram', 'placa de video', 'placa de vídeo', 'placa-mae', 'placa mae',
+        'processador ryzen', 'processador intel', 'core i3', 'core i5', 'core i7', 'core i9',
+        'ryzen 5', 'ryzen 7', 'impressora', 'baseus', 'ugreen', 'lenovo', 'qcy',
+        'cabo usb', 'cabo tipo c', 'cabo lightning', 'hub usb'
     ]
-    if any(k in t_norm for k in informatica_keywords):
+    if match_any(informatica_kw, t_norm):
         return 'Informática'
 
-    # 11. Eletrônicos
-    eletronicos_keywords = [
-        'smart tv', 'televisao', 'tv 4k', 'tv 32', 'tv 43', 'tv 50', 'tv 55', 'tv 65',
+    # 18. Eletrônicos
+    eletronicos_kw = [
+        'smart tv', 'televisao', 'televisão', 'tv 4k', 'tv 32', 'tv 43', 'tv 50', 'tv 55', 'tv 65',
         'soundbar', 'caixa de som', 'fone de ouvido', 'headphone', 'earbuds', 'airpods',
-        'jbl', 'bluetooth', 'alexa', 'echo dot', 'echo pop', 'projetor', 'smartwatch',
-        'smartband', 'smart plug', 'tomada inteligente', 'lampada inteligente', 'kindle'
+        'jbl', 'bluetooth', 'alexa', 'echo dot', 'echo pop', 'projetor', 'kindle'
     ]
-    if any(k in t_norm for k in eletronicos_keywords):
+    if match_any(eletronicos_kw, t_norm):
         return 'Eletrônicos'
 
     return 'Outros'

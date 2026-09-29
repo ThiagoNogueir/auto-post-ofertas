@@ -113,18 +113,23 @@ def process_deal(deal: Dict) -> bool:
         
         category = deal.get('category', 'Outros')
         
+        # In niche mode, skip items that couldn't be classified into one of the curated niches
+        if category == 'Outros' or category not in ALL_NICHES:
+            logger.info(f"Skipping deal with unmapped/generic category: '{category}' - {deal_title}")
+            return False
+            
         telegram_sent = False
         whatsapp_sent = False
         
         # Niche routing:
         # Telegram receives Tech & Setup (Celulares, Informática, Eletrônicos, Games)
-        # WhatsApp receives Estoque de Casa & Mercado (Casa, Bebidas, Beleza)
+        # WhatsApp receives all 8 specialized groups (Tech, Casa, Beleza, Mercado, Moda, Pets, Bebês, Ferramentas)
         is_tech = category in TECH_CATEGORIES
         wa_groups = groups_config.get('whatsapp_groups', {})
-        has_wa_group = category in wa_groups or ('default' in wa_groups and not niche_mode)
+        has_wa_group = bool(wa_groups.get(category))
 
         can_send_telegram = send_telegram and (is_tech or not niche_mode)
-        can_send_whatsapp = send_whatsapp and (has_wa_group or not niche_mode)
+        can_send_whatsapp = send_whatsapp and has_wa_group
         
         # 1. Send to Telegram if enabled and matches Tech niche
         if can_send_telegram:
