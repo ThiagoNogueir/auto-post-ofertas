@@ -293,15 +293,25 @@ def detect_category(title: str, url: str) -> str:
         return 'Bebidas'
     if 'category=mlb1246' in u_norm or '/beleza-cuidado-pessoal/' in u_norm or '/beleza/' in u_norm:
         return 'Beleza'
+    if 'category=mlb409431' in u_norm or '/saude/' in u_norm:
+        return 'Saúde'
     if 'category=mlb1430' in u_norm or '/calcados-roupas-bolsas/' in u_norm or '/moda/' in u_norm:
         return 'Moda'
+    if 'category=mlb1276' in u_norm or '/esportes-fitness/' in u_norm:
+        return 'Esportes'
     if 'category=mlb1500' in u_norm or '/ferramentas/' in u_norm:
         return 'Ferramentas'
     if 'category=mlb1743' in u_norm or '/acessorios-veiculos/' in u_norm or '/automotivo/' in u_norm:
         return 'Automotivo'
-    if 'eletrodomesticos' in u_norm or 'casa-moveis' in u_norm or 'cama-mesa-banho' in u_norm or 'category=mlb1499' in u_norm:
+    if 'category=mlb1512' in u_norm or '/construcao/' in u_norm:
+        return 'Construção'
+    if 'category=mlb1384' in u_norm or '/bebes/' in u_norm:
+        return 'Bebês'
+    if 'category=mlb1132' in u_norm or '/brinquedos-hobbies/' in u_norm or '/brinquedos/' in u_norm:
+        return 'Brinquedos'
+    if 'eletrodomesticos' in u_norm or 'casa-moveis' in u_norm or 'cama-mesa-banho' in u_norm or 'category=mlb1499' in u_norm or 'category=mlb1574' in u_norm or 'category=mlb5726' in u_norm:
         return 'Casa'
-    if 'eletronicos-audio' in u_norm or 'tv-audio' in u_norm or 'category=mlb1000' in u_norm:
+    if 'eletronicos-audio' in u_norm or 'tv-audio' in u_norm or 'category=mlb1000' in u_norm or 'category=mlb1039' in u_norm:
         return 'Eletrônicos'
 
     # 2. Pets & Animais (Title Keywords)

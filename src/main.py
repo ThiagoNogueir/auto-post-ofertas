@@ -28,7 +28,14 @@ def fetch_raw_data(url: str) -> str:
     return fetch_html_selenium(url)
 
 TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
-CASA_CATEGORIES = {'Casa', 'Bebidas', 'Beleza', 'Alimentos'}
+CASA_CATEGORIES = {'Casa', 'Construção'}
+BELEZA_CATEGORIES = {'Beleza', 'Saúde'}
+MERCADO_CATEGORIES = {'Bebidas', 'Alimentos'}
+MODA_CATEGORIES = {'Moda', 'Esportes'}
+PETS_CATEGORIES = {'Pets'}
+KIDS_CATEGORIES = {'Bebês', 'Brinquedos'}
+AUTO_CATEGORIES = {'Ferramentas', 'Automotivo'}
+ALL_NICHES = TECH_CATEGORIES | CASA_CATEGORIES | BELEZA_CATEGORIES | MERCADO_CATEGORIES | MODA_CATEGORIES | PETS_CATEGORIES | KIDS_CATEGORIES | AUTO_CATEGORIES
 
 def process_deal(deal: Dict) -> bool:
     """
@@ -113,13 +120,11 @@ def process_deal(deal: Dict) -> bool:
         # Telegram receives Tech & Setup (Celulares, Informática, Eletrônicos, Games)
         # WhatsApp receives Estoque de Casa & Mercado (Casa, Bebidas, Beleza)
         is_tech = category in TECH_CATEGORIES
-        is_casa = category in CASA_CATEGORIES
-        
         wa_groups = groups_config.get('whatsapp_groups', {})
-        has_wa_tech_group = is_tech and (category in wa_groups or 'Informática' in wa_groups)
+        has_wa_group = category in wa_groups or ('default' in wa_groups and not niche_mode)
 
         can_send_telegram = send_telegram and (is_tech or not niche_mode)
-        can_send_whatsapp = send_whatsapp and (is_casa or has_wa_tech_group or not niche_mode)
+        can_send_whatsapp = send_whatsapp and (has_wa_group or not niche_mode)
         
         # 1. Send to Telegram if enabled and matches Tech niche
         if can_send_telegram:
@@ -380,27 +385,42 @@ def run_job():
             # Sort candidates by discount percentage (highest discount first)
             collected_candidates.sort(key=lambda d: d.get('discount_pct', 0), reverse=True)
             
-            # Read limits from config (default max 2 per run per channel)
+            # Read limits from config (default max 1 deal per niche group per cycle)
+            max_per_group = urls_config.get('max_deals_per_group', 1)
             max_telegram = urls_config.get('max_deals_per_run_telegram', 2)
-            max_whatsapp = urls_config.get('max_deals_per_run_whatsapp', 2)
             
-            tech_candidates = [d for d in collected_candidates if d.get('category') in TECH_CATEGORIES]
-            casa_candidates = [d for d in collected_candidates if d.get('category') in CASA_CATEGORIES]
+            GROUPS_CLUSTERS = {
+                'Tech & Games': TECH_CATEGORIES,
+                'Casa & Decoração': CASA_CATEGORIES,
+                'Beleza & Perfumaria': BELEZA_CATEGORIES,
+                'Mercado & Bebidas': MERCADO_CATEGORIES,
+                'Moda & Calçados': MODA_CATEGORIES,
+                'Pet Shop': PETS_CATEGORIES,
+                'Bebês & Brinquedos': KIDS_CATEGORIES,
+                'Ferramentas & Automotivo': AUTO_CATEGORIES
+            }
             
-            top_tech = tech_candidates[:max_telegram]
-            top_casa = casa_candidates[:max_whatsapp]
+            dispatched_ids = set()
             
-            logger.info(f"Curation summary: {len(collected_candidates)} qualified candidates found. Dispatching top {len(top_tech)} Tech deals (Telegram) and top {len(top_casa)} Casa deals (WhatsApp).")
-            
+            # 1. Dispatch to Telegram (Top Tech deals)
+            top_tech = [d for d in collected_candidates if d.get('category') in TECH_CATEGORIES][:max_telegram]
             for deal in top_tech:
-                if process_deal(deal):
-                    total_deals_sent += 1
-                    time.sleep(5)
-                    
-            for deal in top_casa:
-                if process_deal(deal):
-                    total_deals_sent += 1
-                    time.sleep(5)
+                ext_id = extract_product_id(deal.get('original_url', ''))
+                if ext_id not in dispatched_ids:
+                    if process_deal(deal):
+                        total_deals_sent += 1
+                        dispatched_ids.add(ext_id)
+                        time.sleep(3)
+                        
+            # 2. Dispatch to each WhatsApp group (Top deal in that cluster)
+            for cluster_name, cats in GROUPS_CLUSTERS.items():
+                cluster_deals = [d for d in collected_candidates if d.get('category') in cats and extract_product_id(d.get('original_url', '')) not in dispatched_ids]
+                for deal in cluster_deals[:max_per_group]:
+                    ext_id = extract_product_id(deal.get('original_url', ''))
+                    if process_deal(deal):
+                        total_deals_sent += 1
+                        dispatched_ids.add(ext_id)
+                        time.sleep(3)
         else:
             logger.info("No new deals meeting the discount, niche and ticket criteria in this cycle.")
         

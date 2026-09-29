@@ -115,8 +115,14 @@ Text to analyze:
 
 
 TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
-CASA_CATEGORIES = {'Casa', 'Bebidas', 'Beleza'}
-TARGET_CATEGORIES = TECH_CATEGORIES | CASA_CATEGORIES
+CASA_CATEGORIES = {'Casa', 'Construção', 'Bebidas', 'Alimentos', 'Beleza', 'Saúde'}
+MODA_CATEGORIES = {'Moda', 'Esportes'}
+PETS_CATEGORIES = {'Pets'}
+KIDS_CATEGORIES = {'Bebês', 'Brinquedos'}
+AUTO_CATEGORIES = {'Ferramentas', 'Automotivo'}
+
+TARGET_CATEGORIES = TECH_CATEGORIES | CASA_CATEGORIES | MODA_CATEGORIES | PETS_CATEGORIES | KIDS_CATEGORIES | AUTO_CATEGORIES
+
 
 
 def validate_deal(deal: Dict) -> bool:

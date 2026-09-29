@@ -1,22 +1,29 @@
 {
-  "min_discount_percentage": 25,
+  "min_discount_percentage": 20,
+  "max_deals_per_group": 1,
   "max_deals_per_run_telegram": 2,
   "max_deals_per_run_whatsapp": 2,
   "tech_min_price": 20.0,
   "tech_max_price": 6500.0,
   "casa_min_price": 15.0,
-  "casa_max_price": 300.0,
+  "casa_max_price": 500.0,
   "urls_to_monitor": [
     "https://www.mercadolivre.com.br/ofertas?category=MLB1648&price_discount=25-100",
     "https://www.mercadolivre.com.br/ofertas?category=MLB1144&price_discount=25-100",
     "https://www.mercadolivre.com.br/ofertas?category=MLB1000&price_discount=25-100",
     "https://www.mercadolivre.com.br/ofertas?category=MLB1051&price_discount=25-100",
-    "https://www.mercadolivre.com.br/ofertas?category=MLB1403&price_discount=25-100",
-    "https://www.mercadolivre.com.br/ofertas?category=MLB1246&price_discount=25-100",
-    "https://www.mercadolivre.com.br/ofertas?category=MLB1499&price_discount=25-100",
     "https://www.mercadolivre.com.br/ofertas?q=pc+gamer&price_discount=20-100",
     "https://www.mercadolivre.com.br/ofertas?q=placa+de+video&price_discount=20-100",
-    "https://www.mercadolivre.com.br/ofertas?q=hardware&price_discount=20-100",
-    "https://shopee.com.br/flash_sale"
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1499&price_discount=25-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1512&price_discount=20-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1246&price_discount=25-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1403&price_discount=20-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1430&price_discount=25-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1276&price_discount=25-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1071&price_discount=20-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1384&price_discount=20-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1132&price_discount=25-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1500&price_discount=20-100",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1743&price_discount=20-100"
   ]
 }
