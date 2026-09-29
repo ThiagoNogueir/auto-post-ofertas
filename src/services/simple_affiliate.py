@@ -68,9 +68,9 @@ def generate_simple_link(url: str, with_coupon: bool = True) -> str:
             
             return affiliate_link
             
-        elif 'shopee.com' in url:
-            from .shopee_linkbuilder import generate_link_with_linkbuilder as shopee_generate
-            return shopee_generate(url)
+        elif 'shopee.com' in url or 'shope.ee' in url or 's.shopee' in url:
+            from .shopee_api import generate_shopee_link
+            return generate_shopee_link(url)
             
         else:
             logger.warning(f"Unknown platform for URL: {url}")

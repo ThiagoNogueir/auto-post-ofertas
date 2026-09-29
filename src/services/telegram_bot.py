@@ -44,11 +44,27 @@ def format_deal_message(deal_data: Dict) -> str:
     if discount_pct == 0 and old_price > new_price:
         discount_pct = round(((old_price - new_price) / old_price) * 100)
 
+    # Store identification tag at the top
+    store = deal_data.get('store', '')
+    url_lower = str(deal_data.get('affiliate_url', deal_data.get('original_url', ''))).lower()
+    store_lower = (store or '').lower()
+    
+    if 'shopee' in store_lower or 'shope.ee' in url_lower or 'shopee.com' in url_lower or 's.shopee' in url_lower:
+        store_tag = "🟠 <b>SHOPEE</b>\n"
+    elif 'mercado' in store_lower or 'mercadolivre' in url_lower or 'mercadolibre' in url_lower or 'meli.la' in url_lower:
+        store_tag = "🟡 <b>MERCADO LIVRE</b>\n"
+    elif 'amazon' in store_lower or 'amazon' in url_lower or 'amzn.to' in url_lower:
+        store_tag = "🔵 <b>AMAZON</b>\n"
+    elif store:
+        store_tag = f"🏷️ <b>{html.escape(store.upper())}</b>\n"
+    else:
+        store_tag = "🛒 <b>OFERTA</b>\n"
+
     # Build message
     if discount_pct > 0:
-        message = f"🔥 <b>OFERTA IMPERDÍVEL ({discount_pct}% OFF)!</b> 🔥\n\n"
+        message = f"{store_tag}🔥 <b>OFERTA IMPERDÍVEL ({discount_pct}% OFF)!</b> 🔥\n\n"
     else:
-        message = f"🔥 <b>OFERTA IMPERDÍVEL!</b> 🔥\n\n"
+        message = f"{store_tag}🔥 <b>OFERTA IMPERDÍVEL!</b> 🔥\n\n"
         
     message += f"📦 <b>{title}</b>\n\n"
     

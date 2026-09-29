@@ -119,14 +119,21 @@ class EvolutionAPI:
 
 from ..utils.helpers import shorten_url
 
-def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: float, url: str, image_url: str = None):
-    # ... args docstring ...
+def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: float, url: str, image_url: str = None, store: str = None):
+    """
+    Send deal notification to WhatsApp group.
     
+    Args:
+        group_id: WhatsApp group JID (e.g. 120363...@g.us)
+        title: Product title
+        price: Current price
+        old_price: Original price
+        url: Affiliate or original URL
+        image_url: Product image URL
+        store: Store name (Mercado Livre, Shopee, etc.)
+    """
     evolution = EvolutionAPI()
     
-    # if not evolution.is_configured():
-    #     return False
-        
     # Shorten URL
     short_url = shorten_url(url)
     
@@ -136,6 +143,20 @@ def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: fl
         discount_pct = round(((old_price - price) / old_price) * 100)
         savings = old_price - price
         
+    # Store identification tag at the top
+    store_lower = (store or '').lower()
+    url_lower = (url or '').lower()
+    if 'shopee' in store_lower or 'shope.ee' in url_lower or 'shopee.com' in url_lower or 's.shopee' in url_lower:
+        store_tag = "🟠 *SHOPEE*"
+    elif 'mercado' in store_lower or 'mercadolivre' in url_lower or 'mercadolibre' in url_lower or 'meli.la' in url_lower:
+        store_tag = "🟡 *MERCADO LIVRE*"
+    elif 'amazon' in store_lower or 'amazon' in url_lower or 'amzn.to' in url_lower:
+        store_tag = "🔵 *AMAZON*"
+    elif store:
+        store_tag = f"🏷️ *{store.upper()}*"
+    else:
+        store_tag = "🛒 *OFERTA*"
+
     header = f"🔥 *OFERTA IMPERDÍVEL ({discount_pct}% OFF)!* 🔥" if discount_pct > 0 else "🔥 *OFERTA IMPERDÍVEL!* 🔥"
     
     if savings > 0:
@@ -143,8 +164,9 @@ def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: fl
     else:
         price_text = f"💵 *Por:* R$ {price:.2f}"
     
-    # Format message
-    message = f"""{header}
+    # Format message with store identification first
+    message = f"""{store_tag}
+{header}
 
 📦 {title}
 
@@ -160,3 +182,4 @@ def send_deal_to_whatsapp(group_id: str, title: str, price: float, old_price: fl
         return evolution.send_image_message(group_id, image_url, message)
     else:
         return evolution.send_text_message(group_id, message)
+

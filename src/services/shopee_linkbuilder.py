@@ -291,3 +291,8 @@ def generate_shopee_affiliate_link(product_url: str, timeout: int = 30) -> str:
                 logger.info("Chrome closed")
             except:
                 pass
+
+
+# Alias for compatibility with other link builders
+generate_link_with_linkbuilder = generate_shopee_affiliate_link
+

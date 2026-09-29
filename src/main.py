@@ -77,12 +77,15 @@ def process_deal(deal: Dict) -> bool:
         deal['affiliate_url'] = affiliate_url
         
         # Determine store name
-        # Determine store name
         store_name = 'Outros'
-        if 'mercadolivre.com' in original_url:
+        if 'mercadolivre.com' in original_url or 'mercadolibre.com' in original_url or 'meli.la' in original_url:
             store_name = 'Mercado Livre'
-        elif 'shopee.com' in original_url:
+        elif 'shopee.com' in original_url or 'shope.ee' in original_url or 's.shopee' in original_url:
             store_name = 'Shopee'
+        elif 'amazon.com' in original_url or 'amzn.to' in original_url:
+            store_name = 'Amazon'
+            
+        deal['store'] = store_name
             
         # --- Channel Routing Logic ---
         
@@ -192,7 +195,8 @@ def process_deal(deal: Dict) -> bool:
                         price=float(deal.get('new_price', 0)),
                         old_price=float(deal.get('old_price', 0) or 0),
                         url=affiliate_url,
-                        image_url=deal.get('image_url')
+                        image_url=deal.get('image_url'),
+                        store=store_name
                     )
                     if wa_result:
                         whatsapp_sent = True
@@ -341,6 +345,35 @@ def run_job():
                     pass
             import gc
             gc.collect()
+
+        # --- Shopee Affiliate API Offers Fetching ---
+        try:
+            from .services.shopee_api import ShopeeAffiliateAPI
+            shopee_api = ShopeeAffiliateAPI()
+            if shopee_api.is_configured():
+                logger.info("Shopee Open API active! Fetching category offers from Shopee...")
+                shopee_keywords = [
+                    ("pc gamer", "Games"),
+                    ("placa de video", "Informática"),
+                    ("teclado mecanico", "Informática"),
+                    ("casa e decoracao", "Casa"),
+                    ("perfume importado", "Beleza"),
+                    ("whisky", "Bebidas")
+                ]
+                for kw, cat in shopee_keywords:
+                    shp_deals = shopee_api.fetch_offers(keyword=kw, limit=5)
+                    for d in shp_deals:
+                        d['category'] = cat
+                        if validate_deal(d):
+                            ext_id = extract_product_id(d.get('original_url', ''))
+                            if ext_id and not is_deal_processed(ext_id, title=d.get('title', '')):
+                                if not any(extract_product_id(c.get('original_url', '')) == ext_id for c in collected_candidates):
+                                    collected_candidates.append(d)
+                                    total_deals_found += 1
+            else:
+                logger.debug("Shopee Open API not configured in .env (SHOPEE_APP_ID / SHOPEE_SECRET)")
+        except Exception as se:
+            logger.warning(f"Shopee API fetch error: {se}")
 
         # --- Curation & Rate Limiter: Dispatch only TOP deals per run ---
         if collected_candidates:
