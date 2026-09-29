@@ -388,7 +388,28 @@ def detect_category(title: str, url: str) -> str:
     if any(k in t_norm for k in automotivo_keywords):
         return 'Automotivo'
 
-    # 7. Casa - Kits e Eletrodomésticos
+    # 7. Smartwatches & Wearables (Technology & Games)
+    smartwatch_keywords = [
+        'smartwatch', 'smart watch', 'apple watch', 'galaxy watch', 'relogio smartwatch',
+        'relógio smartwatch', 'pulseira inteligente', 'mi band', 'amazfit', 'haylou',
+        'huawei watch', 'fitbit', 'garmin', 'relogio inteligente', 'relógio inteligente'
+    ]
+    if any(k in t_norm for k in smartwatch_keywords):
+        return 'Eletrônicos'
+
+    # Relógio Tradicional (Moda)
+    relogio_moda = [
+        'relogio masculino', 'relógio masculino', 'relogio feminino', 'relógio feminino',
+        'relogio de pulso', 'relógio de pulso', 'relogio casio', 'relogio seiko',
+        'relogio orient', 'relogio invicta', 'relogio technos', 'relogio champion'
+    ]
+    if any(k in t_norm for k in relogio_moda):
+        return 'Moda'
+
+    if 'relogio de parede' in t_norm or 'relógio de parede' in t_norm or 'relogio despertador' in t_norm:
+        return 'Casa'
+
+    # 8. Casa - Kits e Eletrodomésticos
     casa_kits = [
         'jogo de toalha', 'jogo de panela', 'jogo de cama', 'jogo de lencol',
         'jogo de taca', 'jogo de copo', 'jogo de prato', 'jogo de xicara',
@@ -408,10 +429,11 @@ def detect_category(title: str, url: str) -> str:
         'cobertor', 'lencol', 'travesseiro', 'manta', 'tapete', 'cortina', 'almofada',
         'colchao', 'cobre leito', 'panela', 'faqueiro', 'talher', 'garrafa termica',
         'pote hermetico', 'marmita', 'lixeira', 'varal', 'chuveiro', 'torneira', 'guarda-roupa',
-        'sofa', 'poltrona', 'sabao', 'sabão', 'omo', 'ariel', 'amaciante', 'comfort', 'downy',
-        'detergente', 'ype', 'ypê', 'fralda', 'pampers', 'huggies', 'papel higienico',
-        'papel higiênico', 'neve', 'desinfetante', 'limpeza', 'lava roupas', 'lava loucas',
-        'lava louças', 'finish', 'multiuso', 'veja'
+        'sofa ', ' sofá ', 'poltrona', 'sabao em po', 'sabão em pó', 'sabao liquido',
+        'amaciante', 'comfort', 'downy', 'detergente', 'sabao omo', 'sabão omo', 'lava roupas omo',
+        'sabao ype', 'sabão ypê', 'detergente ype', 'detergente ypê', 'desinfetante',
+        'limpeza', 'lava roupas', 'lava loucas', 'lava louças', 'finish', 'multiuso veja',
+        'limpador veja', 'desengordurante veja'
     ]
     if any(k in t_norm for k in casa_keywords):
         return 'Casa'
