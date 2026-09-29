@@ -398,7 +398,10 @@ def detect_category(title: str, url: str) -> str:
         'cobertor', 'lencol', 'travesseiro', 'manta', 'tapete', 'cortina', 'almofada',
         'colchao', 'cobre leito', 'panela', 'faqueiro', 'talher', 'garrafa termica',
         'pote hermetico', 'marmita', 'lixeira', 'varal', 'chuveiro', 'torneira', 'guarda-roupa',
-        'sofa', 'poltrona'
+        'sofa', 'poltrona', 'sabao', 'sabão', 'omo', 'ariel', 'amaciante', 'comfort', 'downy',
+        'detergente', 'ype', 'ypê', 'fralda', 'pampers', 'huggies', 'papel higienico',
+        'papel higiênico', 'neve', 'desinfetante', 'limpeza', 'lava roupas', 'lava loucas',
+        'lava louças', 'finish', 'multiuso', 'veja'
     ]
     if any(k in t_norm for k in casa_keywords):
         return 'Casa'
@@ -431,7 +434,9 @@ def detect_category(title: str, url: str) -> str:
         'notebook', 'laptop', 'macbook', 'computador', 'pc desktop', 'pc gamer', 'monitor',
         'mouse', 'teclado', 'mousepad', 'webcam', 'roteador', 'ssd', 'nvme', 'memoria ram',
         'placa de video', 'placa-mae', 'placa mae', 'processador ryzen', 'processador intel',
-        'core i3', 'core i5', 'core i7', 'core i9', 'ryzen 5', 'ryzen 7', 'impressora'
+        'core i3', 'core i5', 'core i7', 'core i9', 'ryzen 5', 'ryzen 7', 'impressora',
+        'baseus', 'ugreen', 'lenovo', 'qcy', 'carregador', 'cabo usb', 'cabo tipo c',
+        'cabo type c', 'cabo lightning', 'carregador gan', 'suporte notebook', 'hub usb'
     ]
     if any(k in t_norm for k in informatica_keywords):
         return 'Informática'
@@ -441,7 +446,7 @@ def detect_category(title: str, url: str) -> str:
         'smart tv', 'televisao', 'tv 4k', 'tv 32', 'tv 43', 'tv 50', 'tv 55', 'tv 65',
         'soundbar', 'caixa de som', 'fone de ouvido', 'headphone', 'earbuds', 'airpods',
         'jbl', 'bluetooth', 'alexa', 'echo dot', 'echo pop', 'projetor', 'smartwatch',
-        'kindle'
+        'smartband', 'smart plug', 'tomada inteligente', 'lampada inteligente', 'kindle'
     ]
     if any(k in t_norm for k in eletronicos_keywords):
         return 'Eletrônicos'

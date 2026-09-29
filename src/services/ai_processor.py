@@ -114,9 +114,15 @@ Text to analyze:
         return []
 
 
+TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
+CASA_CATEGORIES = {'Casa', 'Bebidas', 'Beleza'}
+TARGET_CATEGORIES = TECH_CATEGORIES | CASA_CATEGORIES
+
+
 def validate_deal(deal: Dict) -> bool:
     """
-    Validate that a deal has all required fields and meets minimum discount criteria.
+    Validate that a deal has all required fields, belongs to a target niche,
+    meets minimum discount, and fits the ideal price ticket.
     
     Args:
         deal: Deal dictionary
@@ -130,15 +136,31 @@ def validate_deal(deal: Dict) -> bool:
         if field not in deal or not deal[field]:
             logger.warning(f"Deal missing required field: {field}")
             return False
+
+    category = deal.get('category', 'Outros')
+    
+    # 1. Niche Filter: Reject products from non-target categories (Pets, Moda, Ferramentas, etc.)
+    if category not in TARGET_CATEGORIES and category != 'Outros':
+        logger.info(f"Skipping out-of-niche deal: '{deal.get('title')[:35]}...' [{category}]")
+        return False
             
-    # Check minimum discount filter
+    # Check minimum discount and ticket filters
     try:
         config_path = os.path.join(os.getcwd(), 'urls_config.json')
-        min_discount = 15
+        min_discount = 25
+        tech_min_price = 25.0
+        tech_max_price = 450.0
+        casa_min_price = 15.0
+        casa_max_price = 300.0
+        
         if os.path.exists(config_path):
             with open(config_path, 'r', encoding='utf-8') as f:
                 cfg = json.load(f)
-                min_discount = cfg.get('min_discount_percentage', 15)
+                min_discount = cfg.get('min_discount_percentage', 25)
+                tech_min_price = float(cfg.get('tech_min_price', 25.0))
+                tech_max_price = float(cfg.get('tech_max_price', 450.0))
+                casa_min_price = float(cfg.get('casa_min_price', 15.0))
+                casa_max_price = float(cfg.get('casa_max_price', 300.0))
                 
         discount_pct = deal.get('discount_pct', 0)
         old_price = float(deal.get('old_price', 0) or 0)
@@ -148,10 +170,31 @@ def validate_deal(deal: Dict) -> bool:
             discount_pct = round(((old_price - new_price) / old_price) * 100)
             deal['discount_pct'] = discount_pct
             
+        # 2. Minimum Discount Filter
         if min_discount > 0 and discount_pct < min_discount:
             logger.info(f"Skipping '{deal.get('title')[:35]}...': discount {discount_pct}% is below minimum {min_discount}%")
             return False
+
+        # 3. Ticket / Price Range Filter
+        # Bypass max price if discount >= 50% (potential bug / super deal)
+        is_super_deal = discount_pct >= 50
+        
+        if category in TECH_CATEGORIES:
+            if new_price < tech_min_price:
+                logger.info(f"Skipping Tech deal below min ticket (R$ {new_price} < R$ {tech_min_price}): '{deal.get('title')[:35]}...'")
+                return False
+            if new_price > tech_max_price and not is_super_deal:
+                logger.info(f"Skipping Tech deal above max ticket (R$ {new_price} > R$ {tech_max_price}): '{deal.get('title')[:35]}...'")
+                return False
+        elif category in CASA_CATEGORIES:
+            if new_price < casa_min_price:
+                logger.info(f"Skipping Casa deal below min ticket (R$ {new_price} < R$ {casa_min_price}): '{deal.get('title')[:35]}...'")
+                return False
+            if new_price > casa_max_price and not is_super_deal:
+                logger.info(f"Skipping Casa deal above max ticket (R$ {new_price} > R$ {casa_max_price}): '{deal.get('title')[:35]}...'")
+                return False
+                
     except Exception as e:
-        logger.debug(f"Could not apply discount filter: {e}")
+        logger.debug(f"Could not apply discount/ticket filter: {e}")
     
     return True

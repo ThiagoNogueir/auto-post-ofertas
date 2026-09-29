@@ -27,6 +27,9 @@ def fetch_raw_data(url: str) -> str:
     """
     return fetch_html_selenium(url)
 
+TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
+CASA_CATEGORIES = {'Casa', 'Bebidas', 'Beleza'}
+
 def process_deal(deal: Dict) -> bool:
     """
     Process a single deal: deduplicate, generate link, and send notification.
@@ -96,14 +99,24 @@ def process_deal(deal: Dict) -> bool:
         enabled = routing.get('enabled', False)
         send_telegram = routing.get('send_to_telegram', True)
         send_whatsapp = routing.get('send_to_whatsapp', False)
+        niche_mode = routing.get('niche_mode', True)
         
         category = deal.get('category', 'Outros')
         
         telegram_sent = False
         whatsapp_sent = False
         
-        # 1. Send to Telegram if enabled
-        if send_telegram:
+        # Niche routing:
+        # Telegram receives Tech & Setup (Celulares, Informática, Eletrônicos, Games)
+        # WhatsApp receives Estoque de Casa & Mercado (Casa, Bebidas, Beleza)
+        is_tech = category in TECH_CATEGORIES
+        is_casa = category in CASA_CATEGORIES
+        
+        can_send_telegram = send_telegram and (is_tech or not niche_mode)
+        can_send_whatsapp = send_whatsapp and (is_casa or not niche_mode)
+        
+        # 1. Send to Telegram if enabled and matches Tech niche
+        if can_send_telegram:
             tg_groups = groups_config.get('telegram_groups', {})
             
             # For Shopee products, try Shopee-specific groups first
@@ -142,8 +155,8 @@ def process_deal(deal: Dict) -> bool:
             except Exception as se:
                 logger.error(f"Error broadcasting to subscribers: {se}")
         
-        # 2. Send to WhatsApp if enabled
-        if send_whatsapp:
+        # 2. Send to WhatsApp if enabled and matches Casa/Mercado niche
+        if can_send_whatsapp:
             logger.info(f"Attempting to send to WhatsApp (Store: {store_name}, Category: {category})")
             try:
                 wa_groups = groups_config.get('whatsapp_groups', {})
@@ -253,6 +266,7 @@ def run_job():
         
         total_deals_found = 0
         total_deals_sent = 0
+        collected_candidates = []
         
         driver = None
 
@@ -283,27 +297,19 @@ def run_job():
                         set_url_page(url, 1)
                         break
                         
-                    new_deals_in_page = 0
+                    # Pre-validate and collect qualified deals for curation
                     for deal in deals:
-                        if process_deal(deal):
-                            total_deals_sent += 1
-                            new_deals_in_page += 1
-                            time.sleep(2)
-                            
-                    logger.info(f"Page {current_page} completed: {new_deals_in_page} new deals sent out of {len(deals)} items")
+                        if validate_deal(deal):
+                            ext_id = extract_product_id(deal.get('original_url', ''))
+                            if ext_id and not is_deal_processed(ext_id, title=deal.get('title', '')):
+                                if not any(extract_product_id(c.get('original_url', '')) == ext_id for c in collected_candidates):
+                                    collected_candidates.append(deal)
                     
-                    # If this page was already mostly processed (< 3 new deals), advance to next page immediately
-                    if new_deals_in_page < 3 and 'mercadolivre.com' in url:
-                        current_page += 1
-                        if current_page > 5:
-                            current_page = 1
-                        set_url_page(url, current_page)
-                        pages_checked += 1
-                        logger.info(f"Page was mostly processed, continuing to page {current_page}...")
-                    else:
-                        next_page = current_page + 1 if current_page < 5 else 1
-                        set_url_page(url, next_page)
-                        break
+                    # Advance page for rotation in next run
+                    next_page = current_page + 1 if current_page < 5 else 1
+                    set_url_page(url, next_page)
+                    pages_checked += 1
+                    break
         finally:
             if driver:
                 logger.info("Closing Chrome Driver...")
@@ -313,6 +319,35 @@ def run_job():
                     pass
             import gc
             gc.collect()
+
+        # --- Curation & Rate Limiter: Dispatch only TOP deals per run ---
+        if collected_candidates:
+            # Sort candidates by discount percentage (highest discount first)
+            collected_candidates.sort(key=lambda d: d.get('discount_pct', 0), reverse=True)
+            
+            # Read limits from config (default max 2 per run per channel)
+            max_telegram = urls_config.get('max_deals_per_run_telegram', 2)
+            max_whatsapp = urls_config.get('max_deals_per_run_whatsapp', 2)
+            
+            tech_candidates = [d for d in collected_candidates if d.get('category') in TECH_CATEGORIES]
+            casa_candidates = [d for d in collected_candidates if d.get('category') in CASA_CATEGORIES]
+            
+            top_tech = tech_candidates[:max_telegram]
+            top_casa = casa_candidates[:max_whatsapp]
+            
+            logger.info(f"Curation summary: {len(collected_candidates)} qualified candidates found. Dispatching top {len(top_tech)} Tech deals (Telegram) and top {len(top_casa)} Casa deals (WhatsApp).")
+            
+            for deal in top_tech:
+                if process_deal(deal):
+                    total_deals_sent += 1
+                    time.sleep(5)
+                    
+            for deal in top_casa:
+                if process_deal(deal):
+                    total_deals_sent += 1
+                    time.sleep(5)
+        else:
+            logger.info("No new deals meeting the discount, niche and ticket criteria in this cycle.")
         
         logger.info("=" * 60)
         logger.info(f"Job completed: {total_deals_found} deals found, {total_deals_sent} sent")
