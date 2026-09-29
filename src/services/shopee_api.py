@@ -184,12 +184,13 @@ def generate_shopee_link(url: str) -> str:
         if link:
             return link
             
-    # 2. Selenium LinkBuilder (if cookies exist)
+    # 2. Selenium LinkBuilder (only if cookies/session exist)
     try:
-        from .shopee_linkbuilder import generate_shopee_affiliate_link
-        link = generate_shopee_affiliate_link(url, timeout=20)
-        if link and link != url:
-            return link
+        from .shopee_linkbuilder import generate_shopee_affiliate_link, SHOPEE_COOKIES_FILE
+        if os.path.exists(SHOPEE_COOKIES_FILE) or os.getenv("SHOPEE_COOKIES_BASE64"):
+            link = generate_shopee_affiliate_link(url, timeout=20)
+            if link and link != url:
+                return link
     except Exception as e:
         logger.debug(f"Selenium Shopee LinkBuilder fallback failed: {e}")
 
