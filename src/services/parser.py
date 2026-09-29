@@ -282,7 +282,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
             kn = strip_accents(k.lower()).strip()
             if not kn:
                 continue
-            pattern = r'\b' + re.escape(kn) + r'\b'
+            pattern = r'\b' + re.escape(kn) + r'(?:s|es)?\b'
             if re.search(pattern, text):
                 return True
         return False
@@ -384,8 +384,8 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     if match_any(ferramentas_kw, t_norm):
         return 'Ferramentas'
 
-    # 8. Bebidas, Alimentos & Suplementos (Mercado & Bebidas)
-    # Whey, Creatina e Suplementos vão para Ofertas de Mercado & Bebidas (NÃO para Moda)
+    # 8. Bebidas, Alimentos & Suplementos Nutricionais (Ofertas de Mercado & Bebidas)
+    # Suplementos, Vitaminas e Ômega vão para Mercado & Bebidas (NUNCA para Moda)
     bebidas_kw = [
         'vinho', 'espumante', 'prosecco', 'cerveja', 'chope', 'whisky', 'whiskey', 'vodka',
         'gin', 'licor', 'tequila', 'rum', 'cachaca', 'cachaça', 'refrigerante', 'coca-cola',
@@ -393,8 +393,15 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         'isotonico', 'isotônico', 'powerade', 'gatorade', 'agua mineral', 'água mineral',
         'azeite de oliva', 'azeite extra virgem', 'cafe em grao', 'café em grão',
         'capsulas de cafe', 'cápsulas de café', 'nespresso', 'dolce gusto',
-        'whey protein', 'whey', 'creatina monohidratada', 'creatina 100%', 'creatina',
-        'bcaa', 'glutamina', 'albumina', 'hipercalorico', 'pre-treino', 'colageno hidrolisado'
+        'omega', 'ômega', 'omega 3', 'ômega 3', 'caps', 'capsulas', 'cápsulas',
+        'suplemento', 'suplementos', 'suplemento alimentar', 'vitamina', 'vitaminas',
+        'multivitaminico', 'multivitamínico', 'zinco', 'magnesio', 'magnésio', 'melatonina',
+        'coenzima q10', 'feno grego', 'boro', 'arginina', 'zma', 'creapure', 'dark lab',
+        'max titanium', 'growth supplements', 'integralmedica', 'black skull', 'probiotica',
+        'probiotico', 'probiótico', 'oleo de peixe', 'óleo de peixe', 'whey', 'whey protein',
+        'creatina', 'creatina monohidratada', 'bcaa', 'glutamina', 'albumina', 'colageno',
+        'colágeno', 'hipercalorico', 'hipercalórico', 'pre-treino', 'pré-treino', 'testo',
+        'drenalinf', 'termogenico', 'termogênico', 'dark mass', 'massa muscular'
     ]
     if match_any(bebidas_kw, t_norm):
         return 'Bebidas'
@@ -426,16 +433,17 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     if 'mochila para notebook' in t_norm or 'mochila notebook' in t_norm:
         return 'Informática'
 
-    # 12. Moda & Calçados
+    # 12. Moda & Calçados (Roupas, Calçados e Acessórios de Vestir)
     moda_kw = [
         'tenis', 'tênis', 'sapato', 'sapatilha', 'sandalia', 'sandália', 'chinelo',
-        'bota', 'coturno', 'camisa polo', 'camiseta', 'calca jeans', 'calça jeans',
-        'calca moletom', 'bermuda', 'shorts', 'jaqueta', 'moletom', 'vestido', 'saia',
+        'bota', 'coturno', 'camisa', 'camisa polo', 'camisa termica', 'camisa térmica',
+        'camiseta', 'calca', 'calça', 'calca jeans', 'calca moletom', 'calça moletom',
+        'bermuda', 'shorts', 'short', 'jaqueta', 'moletom', 'vestido', 'saia',
         'cueca', 'cuecas', 'calcinha', 'calcinhas', 'sutia', 'sutiã', 'mochila',
         'bolsa feminina', 'carteira masculina', 'oculos de sol', 'óculos de sol',
-        'relogio masculino', 'relogio feminino', 'relogio de pulso', 'relogio casio',
-        'relogio seiko', 'relogio orient', 'relogio invicta', 'relogio technos',
-        'nike', 'adidas', 'olympikus', 'asics', 'mizuno'
+        'relogio masculino', 'relogio feminino', 'relogio de pulso', 'meia', 'legging',
+        'top fitness', 'sunga', 'biquini', 'maiô', 'cinto', 'bone', 'boné',
+        'nike', 'adidas', 'olympikus', 'asics', 'mizuno', 'kappa'
     ]
     if match_any(moda_kw, t_norm):
         return 'Moda'
