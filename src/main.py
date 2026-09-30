@@ -250,8 +250,11 @@ def process_deal(deal: Dict) -> bool:
         except Exception as pe:
             logger.debug(f"Pinterest post skipped: {pe}")
 
-        # 4. Always save to database so we can see in dashboard
-        # But log the delivery status
+        # 4. If neither Telegram nor WhatsApp was sent (e.g. Gatekeeper blocked or no group), do NOT count as sent
+        if not telegram_sent and not whatsapp_sent:
+            logger.warning(f"Deal was not dispatched to any channel (Gatekeeper block or disabled): '{deal_title}'")
+            return False
+
         save_deal(
             external_id=external_id,
             title=deal.get('title', ''),

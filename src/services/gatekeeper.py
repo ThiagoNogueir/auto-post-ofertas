@@ -125,23 +125,55 @@ MERCADO_FORBIDDEN = [
     'skate', 'mountain bike', 'bola de futebol', 'bola de basquete', 'raquete de tenis', 'beach tennis'
 ]
 
-# 6. PET SHOP - STRICT REQUIREMENT: Must contain an animal / pet term
-PET_POSITIVE_KEYWORDS = [
-    'pet', 'pets', 'cao', 'cão', 'caes', 'cães', 'cachorro', 'cachorros', 'cadela',
-    'filhote', 'gato', 'gatos', 'gata', 'felino', 'felinos', 'racao', 'ração', 'antipulgas',
-    'bravecto', 'simparic', 'nexgard', 'arranhador', 'caminha pet', 'cama pet',
-    'cama para cachorro', 'tapete higienico', 'tapete higiênico', 'areia gato', 'areia para gato',
-    'areia higienica', 'pipicat', 'churu', 'aquario', 'aquário', 'coleira', 'peitoral pet',
-    'guia cachorro', 'focinheira', 'comedouro pet', 'bebedouro pet', 'fonte pet', 'petisco',
-    'shampoo pet', 'granulado sanitario', 'whiskas', 'pedigree', 'royal canin', 'premier pet',
-    'golden especial', 'quatree', 'brinquedo para cachorro', 'brinquedo pet', 'brinquedo para gato'
+# 6. PET SHOP - Forbidden terms (NEVER allow tech, tv, appliances, clothing, human food/drink)
+PET_FORBIDDEN = [
+    # Tecnologia, Áudio & Vídeo
+    'tv box', 'smart tv', 'tv', 'televisao', 'televisão', 'conversor', 'antena', 'projetor',
+    'soundbar', 'home theater', 'chromecast', 'fire stick', 'tv stick', 'aquário stv', 'aquario stv',
+    'stv-3000', 'stv-2000', 'box 4k', 'android 11', 'android 12', 'android 10',
+    # Computadores e Celulares
+    'smartphone', 'celular', 'iphone', 'motorola', 'samsung galaxy', 'xiaomi', 'poco',
+    'notebook', 'computador', 'pc gamer', 'placa de video', 'placa mae', 'processador',
+    'memoria ram', 'ssd', 'teclado', 'mouse', 'monitor', 'impressora', 'tablet',
+    # Acessórios Tech
+    'fone de ouvido', 'headset', 'headphone', 'airdots', 'earbuds', 'caixa de som', 'jbl',
+    'smartwatch', 'smart watch', 'relogio inteligente', 'carregador', 'power bank',
+    'cabo usb', 'cabo hdmi', 'roteador', 'repetidor', 'camera de seguranca', 'câmera de segurança',
+    # Consoles e Games
+    'playstation', 'ps5', 'ps4', 'xbox', 'nintendo switch', 'controle gamer',
+    # Eletrodomésticos & Casa
+    'air fryer', 'fritadeira', 'liquidificador', 'batedeira', 'cafeteira', 'microondas',
+    'micro-ondas', 'fogao', 'fogão', 'cooktop', 'geladeira', 'ventilador', 'ar condicionado',
+    'panela', 'jogo de panelas', 'lencol', 'toalha de banho', 'sofa', 'colchao',
+    # Roupas e Calçados
+    'vestido', 'saia', 'calca jeans', 'calça jeans', 'cueca', 'calcinha', 'sutia', 'tenis',
+    'tênis', 'sapato', 'sandalia', 'chinelo', 'bota', 'bolsa feminina',
+    # Ferramentas e Automotivo
+    'furadeira', 'parafusadeira', 'esmerilhadeira', 'martelete', 'pneu', 'bateria automotiva',
+    'oleo motor', 'compressor de ar',
+    # Suplementos, Bebidas & Beleza
+    'whey', 'creatina', 'bcaa', 'omega 3', 'cerveja', 'vinho', 'whisky', 'azeite', 'cafe',
+    'perfume', 'batom', 'maquiagem', 'esmalte', 'protetor solar'
 ]
 
-# 7. BEBÊS & BRINQUEDOS - Forbidden terms (NEVER allow alcohol, adult supplements, adult lingerie, auto/tools)
+# PET SHOP - STRICT REQUIREMENT: Must contain an explicit pet term (NO ambiguous 'aquário')
+PET_POSITIVE_KEYWORDS = [
+    'pet', 'pets', 'cao', 'cão', 'caes', 'cães', 'cachorro', 'cachorros', 'cadela',
+    'filhote cao', 'filhote cachorro', 'gato', 'gatos', 'gata', 'felino', 'felinos',
+    'racao', 'ração', 'antipulgas', 'bravecto', 'simparic', 'nexgard', 'arranhador',
+    'caminha pet', 'cama pet', 'cama para cachorro', 'tapete higienico', 'tapete higiênico',
+    'areia gato', 'areia para gato', 'areia higienica', 'pipicat', 'churu', 'coleira',
+    'peitoral pet', 'guia cachorro', 'focinheira', 'comedouro pet', 'bebedouro pet',
+    'fonte pet', 'petisco', 'petiscos', 'shampoo pet', 'granulado sanitario', 'whiskas',
+    'pedigree', 'royal canin', 'premier pet', 'golden especial', 'quatree',
+    'brinquedo para cachorro', 'brinquedo pet', 'brinquedo para gato', 'gatos castrados'
+]
+
+# 7. BEBÊS & BRINQUEDOS - Forbidden terms (NEVER allow alcohol, adult supplements, adult lingerie, auto/tools/tech)
 BEBES_FORBIDDEN = [
     'cerveja', 'vinho', 'whisky', 'vodka', 'gin', 'cachaca', 'licor', 'whey', 'creatina',
     'pre-treino', 'lingerie', 'sutia', 'calcinha adulto', 'cueca boxer', 'pneu', 'oleo motor',
-    'furadeira', 'esmerilhadeira'
+    'furadeira', 'esmerilhadeira', 'smart tv', 'tv box', 'placa de video', 'smartphone', 'notebook'
 ]
 
 # 8. FERRAMENTAS & AUTOMOTIVO - Forbidden terms (NEVER allow clothing, makeup, diapers, groceries)
@@ -203,8 +235,11 @@ def validate_deal_for_whatsapp_group(group_id: str, title: str, category: str = 
             return False, f"Mercado Group BLOCKED: Title contains forbidden term '{forbidden_match}'"
         return True, "Mercado OK"
 
-    # 6. PET SHOP Group Validation (STRICT POSITIVE SIGNAL REQUIRED)
+    # 6. PET SHOP Group Validation (STRICT NEGATIVE + POSITIVE SIGNAL REQUIRED)
     if group_id == GROUP_PETS:
+        forbidden_match = _match_word(PET_FORBIDDEN, t_norm)
+        if forbidden_match:
+            return False, f"Pet Shop Group BLOCKED: Title contains forbidden term '{forbidden_match}'"
         pet_signal = _match_word(PET_POSITIVE_KEYWORDS, t_norm)
         if not pet_signal:
             return False, "Pet Shop Group BLOCKED: No explicit pet keyword found in title"

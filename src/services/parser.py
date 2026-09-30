@@ -293,13 +293,15 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     t_norm = strip_accents(title.lower())
     u_norm = strip_accents(combined_url)
 
-    # 1. Smartwatches & Wearables -> Eletrônicos (Tech & Games)
-    smartwatch_kw = [
+    # 1. Tech Primaries: TV Box, Smart TV, Smartwatch, Streaming -> Eletrônicos (Tech & Games)
+    tech_primary_kw = [
         'smartwatch', 'smart watch', 'apple watch', 'galaxy watch', 'relogio smartwatch',
         'relógio smartwatch', 'pulseira inteligente', 'mi band', 'amazfit', 'haylou',
-        'huawei watch', 'fitbit', 'garmin', 'relogio inteligente', 'relógio inteligente'
+        'huawei watch', 'fitbit', 'garmin', 'relogio inteligente', 'relógio inteligente',
+        'tv box', 'smart tv box', 'aquario stv', 'aquário stv', 'stv-3000', 'stv-2000',
+        'smart tv', 'chromecast', 'fire stick', 'firetv', 'tv stick', 'conversor digital'
     ]
-    if match_any(smartwatch_kw, t_norm):
+    if match_any(tech_primary_kw, t_norm):
         return 'Eletrônicos'
 
     # 2. Bebês & Maternidade (Checked before Moda to prevent baby/kids clothes from going to adult fashion)
@@ -338,7 +340,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         'cama para cachorro', 'arranhador', 'areia para gato', 'areia higienica', 'pipicat',
         'comedouro pet', 'bebedouro pet', 'fonte pet', 'coleira', 'guia para cachorro',
         'peitoral cachorro', 'peitoral pet', 'brinquedo para cachorro', 'brinquedo pet',
-        'brinquedo para gato', 'gaiola', 'aquario', 'aquário', 'shampoo pet', 'filhote cao',
+        'brinquedo para gato', 'gaiola', 'shampoo pet', 'filhote cao',
         'filhote cachorro', 'gatos castrados', 'petisco', 'petiscos', 'churu', 'pet shop',
         'focinheira', 'mordedor pet', 'granulado sanitario'
     ]
