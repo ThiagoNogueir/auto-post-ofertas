@@ -1,8 +1,8 @@
 {
   "min_discount_percentage": 20,
-  "max_deals_per_group": 1,
-  "max_deals_per_run_telegram": 2,
-  "max_deals_per_run_whatsapp": 2,
+  "max_deals_per_group": 5,
+  "max_deals_per_run_telegram": 5,
+  "max_deals_per_run_whatsapp": 5,
   "tech_min_price": 20.0,
   "tech_max_price": 6500.0,
   "casa_min_price": 15.0,

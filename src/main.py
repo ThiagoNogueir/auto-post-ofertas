@@ -400,12 +400,19 @@ def run_job():
 
         # --- Curation & Rate Limiter: Dispatch only TOP deals per run ---
         if collected_candidates:
+            # Classify candidates with AI semantic understanding
+            for d in collected_candidates:
+                d['category'] = classify_deal(d.get('title', ''), fallback_category=d.get('category', 'Outros'))
+
+            # Filter out deals classified as 'Outros' or outside our 8 curated niches
+            collected_candidates = [d for d in collected_candidates if d.get('category') in ALL_NICHES]
+
             # Sort candidates by discount percentage (highest discount first)
             collected_candidates.sort(key=lambda d: d.get('discount_pct', 0), reverse=True)
             
-            # Read limits from config (default max 1 deal per niche group per cycle)
-            max_per_group = urls_config.get('max_deals_per_group', 1)
-            max_telegram = urls_config.get('max_deals_per_run_telegram', 2)
+            # Read limits from config (up to 5 deals per niche group per cycle)
+            max_per_group = urls_config.get('max_deals_per_group', 5)
+            max_telegram = urls_config.get('max_deals_per_run_telegram', 5)
             
             GROUPS_CLUSTERS = {
                 'Tech & Games': TECH_CATEGORIES,
