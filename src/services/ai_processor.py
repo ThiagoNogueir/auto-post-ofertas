@@ -114,14 +114,20 @@ Text to analyze:
         return []
 
 
-TECH_CATEGORIES = {'Celulares', 'Informática', 'Eletrônicos', 'Games'}
-CASA_CATEGORIES = {'Casa', 'Construção', 'Bebidas', 'Alimentos', 'Beleza', 'Saúde'}
-MODA_CATEGORIES = {'Moda', 'Esportes'}
-PETS_CATEGORIES = {'Pets'}
-KIDS_CATEGORIES = {'Bebês', 'Brinquedos'}
+TECH_CATEGORIES = {'Tech', 'Celulares', 'Informática', 'Eletrônicos', 'Games'}
+CASA_CATEGORIES = {'Casa', 'Construção', 'Decoração'}
+BELEZA_CATEGORIES = {'Beleza', 'Perfumaria', 'Saúde'}
+MERCADO_CATEGORIES = {'Mercado', 'Bebidas', 'Alimentos'}
+MODA_CATEGORIES = {'Moda', 'Esportes', 'Calçados'}
+PETS_CATEGORIES = {'Pets', 'Pet Shop'}
+KIDS_CATEGORIES = {'Bebês', 'Bebes', 'Brinquedos'}
 AUTO_CATEGORIES = {'Ferramentas', 'Automotivo'}
 
-TARGET_CATEGORIES = TECH_CATEGORIES | CASA_CATEGORIES | MODA_CATEGORIES | PETS_CATEGORIES | KIDS_CATEGORIES | AUTO_CATEGORIES
+TARGET_CATEGORIES = (
+    TECH_CATEGORIES | CASA_CATEGORIES | BELEZA_CATEGORIES | 
+    MERCADO_CATEGORIES | MODA_CATEGORIES | PETS_CATEGORIES | 
+    KIDS_CATEGORIES | AUTO_CATEGORIES
+)
 
 
 
