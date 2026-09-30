@@ -332,6 +332,10 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     if match_any(brinquedos_kw, t_norm):
         return 'Brinquedos'
 
+    # Cable zip tie / electrical tie: 'enforca gato' / 'abraçadeira' is Ferramentas, NEVER Pets
+    if 'enforca gato' in t_norm or 'enforca-gato' in t_norm or 'abracadeira' in t_norm:
+        return 'Ferramentas'
+
     # 4. Pets & Animais (Word boundary eliminates 'geração', 'duração', 'refrigeração', etc.)
     pets_kw = [
         'racao', 'ração', 'premier pet', 'royal canin', 'golden especial', 'whiskas', 'pedigree',

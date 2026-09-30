@@ -114,6 +114,10 @@ def strict_deterministic_classify(title: str) -> str:
     if match_any(bebes_kw, t):
         return 'Bebês'
 
+    # Cable zip tie / electrical tie: 'enforca gato' / 'abraçadeira' is hardware/tools, NEVER pets
+    if 'enforca gato' in t or 'enforca-gato' in t or 'abracadeira' in t:
+        return 'Ferramentas'
+
     # 4. PET SHOP (Food, meds, hygiene, accessories - NO standalone 'aquario')
     pet_kw = [
         'racao', 'ração', 'premier pet', 'premier', 'royal canin', 'golden especial', 'golden', 'whiskas', 'pedigree',

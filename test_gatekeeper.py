@@ -64,6 +64,7 @@ test_suite = [
     ("Antipulgas Simparic 20mg para Cães", GROUP_PETS, True, "Pet meds should pass Pet Shop"),
     ("Churrasqueira Portátil a Carvão", GROUP_PETS, False, "Non-pet item must be blocked from Pet Shop"),
     ("Vestido Feminino Estampado", GROUP_PETS, False, "Non-pet item must be blocked from Pet Shop"),
+    ("Pacote Com 1000 Unidades Abraçadeira Nylon Enforca Gato", GROUP_PETS, False, "Cable zip tie must be blocked from Pet Shop"),
 
     # 6. BEBÊS & BRINQUEDOS Group tests
     ("Fralda Pampers Confort Sec Mega G 72 Tiras", GROUP_BEBES, True, "Diapers should pass Bebês"),

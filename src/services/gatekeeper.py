@@ -168,7 +168,9 @@ PET_FORBIDDEN = [
     'tênis', 'sapato', 'sandalia', 'chinelo', 'bota', 'bolsa feminina',
     # Ferramentas e Automotivo
     'furadeira', 'parafusadeira', 'esmerilhadeira', 'martelete', 'pneu', 'bateria automotiva',
-    'oleo motor', 'compressor de ar',
+    'oleo motor', 'compressor de ar', 'abracadeira', 'abraçadeira', 'enforca gato', 'enforca-gato',
+    'fita isolante', 'fita crepe', 'parafuso', 'parafusos', 'bucha', 'buchas', 'trena', 'alicate',
+    'martelo', 'chave de fenda', 'chave philips',
     # Suplementos, Bebidas & Beleza
     'whey', 'creatina', 'bcaa', 'omega 3', 'cerveja', 'vinho', 'whisky', 'azeite', 'cafe',
     'perfume', 'batom', 'maquiagem', 'esmalte', 'protetor solar'
@@ -260,6 +262,8 @@ def validate_deal_for_whatsapp_group(group_id: str, title: str, category: str = 
 
     # 6. PET SHOP Group Validation (STRICT NEGATIVE + POSITIVE SIGNAL REQUIRED)
     if group_id == GROUP_PETS:
+        if any(term in t_norm for term in ['enforca gato', 'enforca-gato', 'abracadeira', 'abraçadeira']):
+            return False, "Pet Shop Group BLOCKED: Cable zip tie / electrical tie is hardware, not pet product"
         forbidden_match = _match_word(PET_FORBIDDEN, t_norm)
         if forbidden_match:
             return False, f"Pet Shop Group BLOCKED: Title contains forbidden term '{forbidden_match}'"
