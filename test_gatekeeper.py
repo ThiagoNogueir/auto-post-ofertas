@@ -26,6 +26,10 @@ test_suite = [
     ("Ração Premier Pet Cães Adultos 15kg", GROUP_MODA, False, "Pet food must be blocked from Moda"),
     ("Placa de Vídeo RTX 4060 8GB GDDR6", GROUP_MODA, False, "GPU must be blocked from Moda"),
     ("Vestido Bebê Menina Malha Waffle Manga Longa Blue 6-9m", GROUP_MODA, False, "Baby dress must be blocked from Moda"),
+    ("Trampolim Jump Profissional Com Capa Saia Diâmetro 1 M 200kg Preto", GROUP_MODA, False, "Trampoline with capa saia must be blocked from Moda"),
+    ("Mesa Multijogos 10 em 1 Ahead Sports Azul Pebolim Bilhar Air Hockey Tênis de Mesa Xadrez com Acessórios", GROUP_MODA, False, "Multi-game table must be blocked from Moda"),
+    ("Saia Box Casal Matelada Ultrassônica Branca", GROUP_MODA, False, "Bed skirt must be blocked from Moda"),
+    ("Raquete de Tênis de Mesa Ping Pong Vollo", GROUP_MODA, False, "Table tennis racket must be blocked from Moda"),
 
     # 2. CASA & DECORAÇÃO Group tests
     ("Fritadeira Sem Óleo Air Fryer Mondial 4L Inox", GROUP_CASA, True, "Air fryer should pass Casa"),

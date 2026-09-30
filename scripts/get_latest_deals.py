@@ -27,24 +27,14 @@ def check_latest():
     for r in c.fetchall():
         print(f"  {r[0]}: {r[1]}")
 
-    print("\n=== TESTE DE MODELOS GROQ ===")
+    print("\n=== MODELOS DISPONÍVEIS NA GROQ ===")
     try:
         from groq import Groq
         client = Groq(api_key=os.getenv('GROQ_API_KEY'))
-        for model in ['llama-3.1-8b-instant', 'llama-3.3-70b-versatile', 'qwen/qwen3.8-27b']:
-            try:
-                t0 = time.time()
-                resp = client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "user", "content": "Classifique em 1 palavra entre [Casa, Tech, Moda]: Fritadeira Air Fryer Philco"}],
-                    temperature=0,
-                    max_tokens=10
-                )
-                print(f"Modelo {model}: {resp.choices[0].message.content.strip()} em {round(time.time() - t0, 3)}s")
-            except Exception as me:
-                print(f"Modelo {model} erro: {me}")
+        models = [m.id for m in client.models.list().data]
+        print("Modelos Groq:", models)
     except Exception as e:
-        print("Erro geral:", e)
+        print("Erro listando modelos:", e)
 
 if __name__ == '__main__':
     check_latest()

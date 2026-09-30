@@ -53,13 +53,30 @@ def strict_deterministic_classify(title: str) -> str:
 
     t = strip_accents(title)
 
-    # 1. OUTROS (Gym equipment, musical instruments, books, adult novelties - ALWAYS drop from niche groups)
+    # 1. OUTROS (Gym equipment, musical instruments, books, sports tables, trampolines - ALWAYS drop from niche groups)
     outros_kw = [
-        'bicicleta ergometrica', 'bicicleta ergométrica', 'esteira ergometrica', 'esteira ergométrica',
-        'spinning', 'velocron', 'banco de supino', 'estacao de musculacao', 'estação de musculação',
-        'anilha de ferro', 'anilha', 'haltere', 'halteres', 'kettlebell', 'violao', 'violão', 'guitarra',
-        'teclado musical', 'bateria acustica', 'bateria musical', 'livro capa dura', 'livro brochura',
-        'livro', 'curso', 'adesivo para moldeira', 'glicemia'
+        # Equipamentos de Academia, Fitness e Trampolins
+        'trampolim', 'jump profissional', 'jump fitness', 'mini trampolim', 'mini jump',
+        'cama elastica', 'cama elástica', 'bicicleta ergometrica', 'bicicleta ergométrica',
+        'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica', 'esteira elétrica',
+        'spinning', 'velocron', 'eliptico', 'elíptico', 'banco de supino', 'estacao de musculacao',
+        'estação de musculação', 'anilha de ferro', 'anilha', 'anilhas', 'haltere', 'halteres',
+        'kettlebell', 'barra fixa', 'barra macica', 'caneleira peso', 'corda de pular', 'tatame',
+        # Mesas de Jogos, Bilhar, Pebolim, Tênis de Mesa
+        'mesa multijogos', 'multijogos', 'pebolim', 'bilhar', 'sinuca', 'air hockey', 'tenis de mesa',
+        'tênis de mesa', 'mesa de tenis', 'mesa de tênis', 'ping pong', 'ping-pong', 'xadrez',
+        'toto', 'totó', 'mesa de jogos', 'mesa de pebolim', 'mesa de bilhar', 'mesa de sinuca',
+        # Equipamentos Esportivos e Raquetes
+        'raquete de tenis', 'raquete de tênis', 'raquete de beach tennis', 'raquete beach tennis',
+        'raquete de ping pong', 'raquete ping pong', 'raquete badminton', 'bola de tenis',
+        'bola de tênis', 'bola de basquete', 'bola de futebol', 'bola de volei', 'bola de vôlei',
+        'patins', 'skate', 'patinete',
+        # Falsos Amigos de Saia (Cama, Berço, Árvore, Capa)
+        'capa saia', 'saia de cama', 'saia para cama', 'saia box', 'saia para berco', 'saia para berço',
+        'saia para arvore', 'saia de arvore', 'saia arvore de natal',
+        # Instrumentos, Livros e Diversos
+        'violao', 'violão', 'guitarra', 'teclado musical', 'bateria acustica', 'bateria musical',
+        'livro capa dura', 'livro brochura', 'livro', 'curso', 'adesivo para moldeira', 'glicemia'
     ]
     if match_any(outros_kw, t):
         return 'Outros'
@@ -149,6 +166,10 @@ def strict_deterministic_classify(title: str) -> str:
         return 'Ferramentas'
 
     # 8. MODA & CALÇADOS (Adult apparel, footwear, bags, sunglasses)
+    # Guard against false friends: 'tênis de mesa' is sports, 'capa saia' is cover/furniture
+    is_sports_tennis = any(w in t for w in ['tenis de mesa', 'mesa de tenis', 'raquete de tenis', 'bola de tenis', 'beach tennis'])
+    is_non_clothing_saia = any(w in t for w in ['capa saia', 'saia de cama', 'saia para cama', 'saia box', 'saia para berco', 'saia de arvore', 'saia para arvore'])
+
     moda_kw = [
         'tenis', 'tênis', 'sapato', 'sapatilha', 'sandalia', 'sandália', 'chinelo', 'bota',
         'coturno', 'camisa', 'camisa polo', 'camiseta', 'calca', 'calça', 'calca jeans', 'calca cargo',
@@ -157,7 +178,7 @@ def strict_deterministic_classify(title: str) -> str:
         'meias', 'bolsa feminina', 'carteira masculina', 'oculos de sol', 'óculos de sol',
         'cinto', 'bone', 'boné'
     ]
-    if match_any(moda_kw, t):
+    if not is_sports_tennis and not is_non_clothing_saia and match_any(moda_kw, t):
         return 'Moda'
 
     # 9. CASA & DECORAÇÃO (Appliances, cookware, bedding, furniture)

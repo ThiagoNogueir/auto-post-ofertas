@@ -62,8 +62,24 @@ MODA_FORBIDDEN = [
     'core i5', 'core i7', 'memoria ram', 'ssd nvme', 'playstation', 'ps5', 'xbox series', 'nintendo switch',
     # Móveis & Eletrodomésticos Grandes
     'fogao', 'geladeira', 'refrigerador', 'freezer', 'microondas', 'maquina de lavar', 'ar condicionado', 'sofa', 'colchao',
-    # Aparelhos de Academia
-    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica', 'banco de supino',
+    # Mesas de Jogos, Bilhar, Pebolim, Tênis de Mesa (NUNCA em Moda)
+    'mesa multijogos', 'multijogos', 'pebolim', 'bilhar', 'sinuca', 'air hockey', 'tenis de mesa',
+    'mesa de tenis', 'ping pong', 'ping-pong', 'xadrez', 'toto', 'totó', 'futebol de botao',
+    'futebol de botão', 'mesa de jogos', 'mesa de pebolim', 'mesa de bilhar', 'mesa de sinuca',
+    # Aparelhos de Academia, Fitness e Trampolins (NUNCA em Moda)
+    'trampolim', 'jump', 'jump profissional', 'jump fitness', 'mini trampolim', 'mini jump',
+    'cama elastica', 'cama elástica', 'bicicleta ergometrica', 'bicicleta ergométrica',
+    'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica',
+    'esteira elétrica', 'eliptico', 'elíptico', 'banco de supino', 'estacao de musculacao',
+    'estação de musculação', 'haltere', 'halteres', 'anilha', 'anilhas', 'kettlebell', 'barra fixa',
+    'barra macica', 'caneleira', 'corda de pular', 'colchonete', 'tatame',
+    # Esportes / Equipamentos (NUNCA em Moda)
+    'raquete', 'raquetes', 'raquete de tenis', 'raquete de tênis', 'beach tennis', 'bola de tenis',
+    'bola de tênis', 'bola de futebol', 'bola de basquete', 'bola de volei', 'bola de vôlei',
+    'trave de gol', 'tabela de basquete', 'rede de volei', 'rede de tenis', 'patins', 'skate', 'patinete',
+    # Falsos Amigos de 'Saia' (Cama, Berço, Árvore, Capa - NUNCA em Moda Vestuário)
+    'capa saia', 'saia de cama', 'saia para cama', 'saia box', 'saia para berco', 'saia para berço',
+    'saia para arvore', 'saia de arvore', 'saia arvore de natal',
     # Bebês, Crianças & Maternidade (NUNCA em Moda Adulto)
     'bebe', 'bebes', 'bebê', 'bebês', 'infantil', 'recem nascido', 'recem-nascido', 'recém nascido',
     'recém-nascido', 'maternidade', 'enxoval bebe', 'body bebe', 'macacao bebe', 'vestido bebe',
@@ -87,8 +103,10 @@ CASA_FORBIDDEN = [
     'pneu aro', 'pastilha de freio', 'amortecedor', 'oleo 5w30', 'bateria automotiva', 'escapamento',
     # Pets
     'racao para', 'racao cachorro', 'racao gato', 'bravecto', 'nexgard', 'simparic', 'pipicat',
-    # Aparelhos de Academia Pesados
-    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica'
+    # Aparelhos de Academia Pesados e Jogos
+    'bicicleta ergometrica', 'bicicleta ergométrica', 'spinning', 'velocron', 'esteira ergometrica', 'esteira ergométrica',
+    'trampolim', 'jump', 'cama elastica', 'cama elástica', 'mesa multijogos', 'multijogos', 'pebolim', 'bilhar',
+    'sinuca', 'air hockey', 'tenis de mesa', 'tênis de mesa', 'ping pong', 'ping-pong'
 ]
 
 # 3. TECNOLOGIA & GAMES - Forbidden terms (NEVER allow clothing, food, grocery, cleaning, cosmetics)
@@ -202,6 +220,11 @@ def validate_deal_for_whatsapp_group(group_id: str, title: str, category: str = 
 
     # 1. MODA Group Validation
     if group_id == GROUP_MODA:
+        # Explicit compound checks for Brazilian e-commerce false friends
+        if any(term in t_norm for term in ['tenis de mesa', 'mesa de tenis', 'raquete de tenis', 'bola de tenis', 'beach tennis']):
+            return False, "Moda Group BLOCKED: Title refers to sports/table tennis, not fashion footwear"
+        if any(term in t_norm for term in ['capa saia', 'saia de cama', 'saia para cama', 'saia box', 'saia para berco', 'saia de arvore', 'saia para arvore']):
+            return False, "Moda Group BLOCKED: Title refers to bedding/cover/skirt accessory, not apparel skirt"
         forbidden_match = _match_word(MODA_FORBIDDEN, t_norm)
         if forbidden_match:
             return False, f"Moda Group BLOCKED: Title contains forbidden term '{forbidden_match}'"

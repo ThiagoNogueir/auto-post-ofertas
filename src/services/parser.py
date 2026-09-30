@@ -413,11 +413,18 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
 
     # 9. Esportes & Fitness (Equipamentos e Acessórios Esportivos)
     esportes_kw = [
+        'trampolim', 'jump profissional', 'jump fitness', 'mini trampolim', 'mini jump',
+        'cama elastica', 'cama elástica', 'mesa multijogos', 'multijogos', 'pebolim', 'bilhar',
+        'sinuca', 'air hockey', 'tenis de mesa', 'tênis de mesa', 'mesa de tenis', 'mesa de tênis',
+        'ping pong', 'ping-pong', 'xadrez', 'totó', 'toto', 'mesa de jogos', 'mesa de pebolim',
+        'mesa de bilhar', 'mesa de sinuca', 'futebol de botao', 'futebol de botão',
         'halteres', 'haltere', 'anilha', 'kettlebell', 'barra fixa', 'barra macica',
-        'banco de supino', 'esteira ergometrica', 'esteira ergométrica', 'bicicleta ergometrica',
-        'bicicleta aro', 'mountain bike', 'corda de pular', 'faixa elastica', 'caneleira peso',
+        'banco de supino', 'esteira ergometrica', 'esteira ergométrica', 'esteira eletrica',
+        'esteira elétrica', 'bicicleta ergometrica', 'bicicleta ergométrica', 'bicicleta aro',
+        'mountain bike', 'corda de pular', 'faixa elastica', 'caneleira peso',
         'luva de boxe', 'saco de pancada', 'bola de futebol', 'bola de basquete', 'bola de volei',
-        'raquete de tenis', 'raquete de beach tennis', 'patins', 'skate'
+        'raquete de tenis', 'raquete de beach tennis', 'beach tennis', 'raquete de ping pong',
+        'raquete badminton', 'patins', 'skate', 'patinete'
     ]
     if match_any(esportes_kw, t_norm):
         return 'Esportes'
@@ -439,6 +446,9 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         return 'Informática'
 
     # 12. Moda & Calçados (Roupas, Calçados e Acessórios de Vestir)
+    is_sports_tennis = any(w in t_norm for w in ['tenis de mesa', 'mesa de tenis', 'raquete de tenis', 'bola de tenis', 'beach tennis'])
+    is_non_clothing_saia = any(w in t_norm for w in ['capa saia', 'saia de cama', 'saia para cama', 'saia box', 'saia para berco', 'saia de arvore', 'saia para arvore'])
+
     moda_kw = [
         'tenis', 'tênis', 'sapato', 'sapatilha', 'sandalia', 'sandália', 'chinelo',
         'bota', 'coturno', 'camisa', 'camisa polo', 'camisa termica', 'camisa térmica',
@@ -450,7 +460,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         'top fitness', 'sunga', 'biquini', 'maiô', 'cinto', 'bone', 'boné',
         'nike', 'adidas', 'olympikus', 'asics', 'mizuno', 'kappa'
     ]
-    if match_any(moda_kw, t_norm):
+    if not is_sports_tennis and not is_non_clothing_saia and match_any(moda_kw, t_norm):
         return 'Moda'
 
     # 13. Casa - Móveis, Cama, Mesa, Banho e Limpeza
