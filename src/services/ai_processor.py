@@ -182,14 +182,17 @@ def validate_deal(deal: Dict) -> bool:
             discount_pct = round(((old_price - new_price) / old_price) * 100)
             deal['discount_pct'] = discount_pct
             
-        # 2. Minimum Discount Filter
-        if min_discount > 0 and discount_pct < min_discount:
-            logger.info(f"Skipping '{deal.get('title')[:35]}...': discount {discount_pct}% is below minimum {min_discount}%")
+        # 2. Minimum Discount Filter (Special 8% rule for Apple/iPhone due to tight manufacturer margins)
+        title_l = deal.get('title', '').lower()
+        is_apple_device = any(k in title_l for k in ['iphone', 'apple watch', 'ipad', 'macbook', 'airpod'])
+        effective_min_discount = 8 if is_apple_device else min_discount
+        if effective_min_discount > 0 and discount_pct < effective_min_discount:
+            logger.info(f"Skipping '{deal.get('title')[:35]}...': discount {discount_pct}% is below minimum {effective_min_discount}% (Apple: 8%, General: {min_discount}%)")
             return False
 
         # 3. Ticket / Price Range Filter
-        # Bypass max price if discount >= 50% (potential bug / super deal)
-        is_super_deal = discount_pct >= 50
+        # Bypass max price if discount >= 50% (super deal) or if it's an Apple device (premium hardware)
+        is_super_deal = discount_pct >= 50 or is_apple_device
         
         if category in TECH_CATEGORIES:
             if new_price < tech_min_price:

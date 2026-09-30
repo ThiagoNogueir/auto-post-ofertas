@@ -4,10 +4,12 @@
   "max_deals_per_run_telegram": 8,
   "max_deals_per_run_whatsapp": 8,
   "tech_min_price": 20.0,
-  "tech_max_price": 6500.0,
+  "tech_max_price": 14000.0,
   "casa_min_price": 15.0,
   "casa_max_price": 500.0,
   "urls_to_monitor": [
+    "https://www.mercadolivre.com.br/loja/apple",
+    "https://www.mercadolivre.com.br/ofertas?category=MLB1051&price=1500-15000&price_discount=5-100",
     "https://www.mercadolivre.com.br/ofertas?category=MLB1648&price_discount=25-100",
     "https://www.mercadolivre.com.br/ofertas?category=MLB1144&price_discount=25-100",
     "https://www.mercadolivre.com.br/ofertas?category=MLB1000&price_discount=25-100",

@@ -75,7 +75,8 @@ def strict_deterministic_classify(title: str) -> str:
         'repetidor wifi', 'câmera de segurança', 'camera de seguranca', 'projetor 4k', 'projetor led',
         'impressora multifuncional', 'impressora termica', 'carregador turbo', 'power bank',
         'playstation', 'ps5', 'ps4', 'xbox series', 'nintendo switch', 'controle gamer',
-        'smartphone', 'celular', 'iphone', 'motorola moto', 'samsung galaxy', 'xiaomi redmi', 'poco'
+        'smartphone', 'celular', 'iphone', 'ipad', 'macbook', 'airpods', 'airpod', 'tablet',
+        'motorola moto', 'samsung galaxy', 'xiaomi redmi', 'poco', 'realme'
     ]
     if match_any(tech_kw, t):
         return 'Tech'

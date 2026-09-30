@@ -486,7 +486,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
 
     # 15. Celulares
     celulares_kw = [
-        'iphone', 'smartphone', 'celular', 'galaxy s', 'galaxy a', 'galaxy m', 'galaxy z',
+        'iphone', 'ipad', 'tablet', 'smartphone', 'celular', 'galaxy s', 'galaxy a', 'galaxy m', 'galaxy z',
         'redmi', 'xiaomi', 'motorola', 'moto g', 'moto e', 'moto edge', 'poco', 'realme', 'infinix'
     ]
     if match_any(celulares_kw, t_norm):
@@ -507,7 +507,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     # 17. Eletrônicos
     eletronicos_kw = [
         'smart tv', 'televisao', 'televisão', 'tv 4k', 'tv 32', 'tv 43', 'tv 50', 'tv 55', 'tv 65',
-        'soundbar', 'caixa de som', 'fone de ouvido', 'headphone', 'earbuds', 'airpods',
+        'soundbar', 'caixa de som', 'fone de ouvido', 'headphone', 'earbuds', 'airpods', 'airpod',
         'jbl', 'bluetooth', 'alexa', 'echo dot', 'echo pop', 'projetor', 'kindle'
     ]
     if match_any(eletronicos_kw, t_norm):
@@ -521,7 +521,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         return 'Bebês'
     if 'category=mlb1132' in u_norm or '/brinquedos-hobbies/' in u_norm or '/brinquedos/' in u_norm:
         return 'Brinquedos'
-    if 'category=mlb1051' in u_norm or 'celulares-telefones' in u_norm:
+    if 'category=mlb1051' in u_norm or 'celulares-telefones' in u_norm or '/loja/apple' in u_norm:
         return 'Celulares'
     if 'category=mlb1648' in u_norm or 'informatica' in u_norm or 'computadores' in u_norm:
         return 'Informática'
