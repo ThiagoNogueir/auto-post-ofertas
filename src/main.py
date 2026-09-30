@@ -400,9 +400,16 @@ def run_job():
 
         # --- Curation & Rate Limiter: Dispatch only TOP deals per run ---
         if collected_candidates:
-            # Classify candidates with AI semantic understanding
-            for d in collected_candidates:
+            # Classify candidates with AI semantic understanding in parallel
+            from concurrent.futures import ThreadPoolExecutor
+            
+            def _classify_candidate(d):
                 d['category'] = classify_deal(d.get('title', ''), fallback_category=d.get('category', 'Outros'))
+                return d
+
+            logger.info(f"Classifying {len(collected_candidates)} candidate deals with AI semantic classifier...")
+            with ThreadPoolExecutor(max_workers=6) as executor:
+                collected_candidates = list(executor.map(_classify_candidate, collected_candidates))
 
             # Filter out deals classified as 'Outros' or outside our 8 curated niches
             collected_candidates = [d for d in collected_candidates if d.get('category') in ALL_NICHES]
@@ -410,9 +417,8 @@ def run_job():
             # Sort candidates by discount percentage (highest discount first)
             collected_candidates.sort(key=lambda d: d.get('discount_pct', 0), reverse=True)
             
-            # Read limits from config (up to 5 deals per niche group per cycle)
-            max_per_group = urls_config.get('max_deals_per_group', 5)
-            max_telegram = urls_config.get('max_deals_per_run_telegram', 5)
+            # Read limits from config (up to 8 deals per niche group per cycle)
+            max_per_group = urls_config.get('max_deals_per_group', 8)
             
             GROUPS_CLUSTERS = {
                 'Tech & Games': TECH_CATEGORIES,
@@ -427,20 +433,12 @@ def run_job():
             
             dispatched_ids = set()
             
-            # 1. Dispatch to Telegram (Top Tech deals)
-            top_tech = [d for d in collected_candidates if d.get('category') in TECH_CATEGORIES][:max_telegram]
-            for deal in top_tech:
-                ext_id = extract_product_id(deal.get('original_url', ''))
-                if ext_id not in dispatched_ids:
-                    if process_deal(deal):
-                        total_deals_sent += 1
-                        dispatched_ids.add(ext_id)
-                        time.sleep(3)
-                        
-            # 2. Dispatch to each WhatsApp group (Top deal in that cluster)
+            # Dispatch top deals for each cluster
             for cluster_name, cats in GROUPS_CLUSTERS.items():
                 cluster_deals = [d for d in collected_candidates if d.get('category') in cats and extract_product_id(d.get('original_url', '')) not in dispatched_ids]
-                for deal in cluster_deals[:max_per_group]:
+                target_deals = cluster_deals[:max_per_group]
+                logger.info(f"Cluster '{cluster_name}': {len(cluster_deals)} candidates available. Dispatching top {len(target_deals)} deals...")
+                for deal in target_deals:
                     ext_id = extract_product_id(deal.get('original_url', ''))
                     if process_deal(deal):
                         total_deals_sent += 1
