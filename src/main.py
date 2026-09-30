@@ -400,20 +400,6 @@ def run_job():
 
         # --- Curation & Rate Limiter: Dispatch only TOP deals per run ---
         if collected_candidates:
-            # Classify candidates with AI semantic understanding in parallel
-            from concurrent.futures import ThreadPoolExecutor
-            
-            def _classify_candidate(d):
-                d['category'] = classify_deal(d.get('title', ''), fallback_category=d.get('category', 'Outros'))
-                return d
-
-            logger.info(f"Classifying {len(collected_candidates)} candidate deals with AI semantic classifier...")
-            with ThreadPoolExecutor(max_workers=6) as executor:
-                collected_candidates = list(executor.map(_classify_candidate, collected_candidates))
-
-            # Filter out deals classified as 'Outros' or outside our 8 curated niches
-            collected_candidates = [d for d in collected_candidates if d.get('category') in ALL_NICHES]
-
             # Sort candidates by discount percentage (highest discount first)
             collected_candidates.sort(key=lambda d: d.get('discount_pct', 0), reverse=True)
             
@@ -433,17 +419,32 @@ def run_job():
             
             dispatched_ids = set()
             
-            # Dispatch top deals for each cluster
+            # Dispatch top deals for each cluster with on-demand AI classification
             for cluster_name, cats in GROUPS_CLUSTERS.items():
-                cluster_deals = [d for d in collected_candidates if d.get('category') in cats and extract_product_id(d.get('original_url', '')) not in dispatched_ids]
-                target_deals = cluster_deals[:max_per_group]
-                logger.info(f"Cluster '{cluster_name}': {len(cluster_deals)} candidates available. Dispatching top {len(target_deals)} deals...")
-                for deal in target_deals:
+                cluster_sent = 0
+                logger.info(f"Scanning candidates for cluster '{cluster_name}' (Target: up to {max_per_group} deals)...")
+                for deal in collected_candidates:
+                    if cluster_sent >= max_per_group:
+                        break
+                    
                     ext_id = extract_product_id(deal.get('original_url', ''))
-                    if process_deal(deal):
-                        total_deals_sent += 1
-                        dispatched_ids.add(ext_id)
-                        time.sleep(3)
+                    if ext_id in dispatched_ids:
+                        continue
+                    
+                    # Classify with AI if not yet classified
+                    if not deal.get('ai_classified'):
+                        deal['category'] = classify_deal(deal.get('title', ''), fallback_category=deal.get('category', 'Outros'))
+                        deal['ai_classified'] = True
+                        time.sleep(0.3)  # Gentle spacing to stay safely under TPM limits
+                    
+                    if deal.get('category') in cats:
+                        if process_deal(deal):
+                            total_deals_sent += 1
+                            cluster_sent += 1
+                            dispatched_ids.add(ext_id)
+                            logger.info(f"[{cluster_name}] Deal {cluster_sent}/{max_per_group} sent: '{deal.get('title', '')[:45]}...'")
+                            time.sleep(3)
+                logger.info(f"Cluster '{cluster_name}' complete: {cluster_sent} deals dispatched.")
         else:
             logger.info("No new deals meeting the discount, niche and ticket criteria in this cycle.")
         

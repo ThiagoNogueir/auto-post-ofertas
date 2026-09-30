@@ -10,6 +10,8 @@ from ..utils.logger import logger
 
 load_dotenv()
 
+import time
+
 # Canonical 8 WhatsApp Group Categories + Outros
 VALID_CATEGORIES = {
     'Tech': 'Tech',
@@ -24,19 +26,18 @@ VALID_CATEGORIES = {
     'Outros': 'Outros'
 }
 
-PROMPT_TEMPLATE = """Voce e um classificador semantico de produtos de e-commerce brasileiro para 8 grupos especializados do WhatsApp:
-- Tech: Celulares, notebooks, informatica, hardware, fones, smartwatch, tvs, consoles, videogames, cabos, eletronicos.
-- Casa: Eletrodomesticos (air fryer, cafeteira, liquidificador, geladeira), panelas, moveis, decoracao, cama, mesa, banho, limpeza da casa.
-- Beleza: Perfumes, maquiagem, cosmeticos, cuidados com cabelo e pele, skincare, barbeadores.
-- Mercado: Bebidas (alcoolicas e nao alcoolicas), alimentos, azeites, cafes, suplementos nutricionais e vitaminas (Whey, Creatina, Omega 3, BCAA).
-- Moda: Roupas adultas, calcados adultos, tenis adultos, bolsas, carteiras, relogios comuns, oculos de sol.
-- Pets: Racoes, petiscos, brinquedos e medicamentos para caes, gatos e animais domesticos.
-- Bebes: Roupas de bebe/infantil (vestidos de bebe, bodies, macacoes), fraldas, brinquedos infantis, bonecas, carrinhos de bebe, itens de maternidade.
-- Ferramentas: Ferramentas eletricas e manuais, construcao, autopecas, pneus, acessorios para carros e motos.
-- Outros: Produtos que NAO pertencem a nenhum dos 8 nichos acima (ex: bicicletas ergometricas, equipamentos pesados de academia, instrumentos musicais, livros, etc).
+PROMPT_TEMPLATE = """Classifique o produto para um dos 8 grupos de ofertas do WhatsApp:
+- Tech: celulares, computadores, hardware, monitores, fones, smartwatch, tvs, consoles, videogames, cabos, eletronicos.
+- Casa: eletrodomesticos (air fryer, cafeteira, liquidificador), panelas, moveis, decoracao, cama/mesa/banho.
+- Beleza: perfumes, maquiagem, cosmeticos, cuidados com cabelo e pele, skincare, barbeadores.
+- Mercado: bebidas, alimentos, cafes, suplementos nutricionais (whey, creatina, vitaminas).
+- Moda: roupas, calçados, tenis, bolsas, carteiras, oculos de sol (adulto).
+- Pets: racao, petiscos, brinquedos e medicamentos para animais.
+- Bebes: roupas de bebe/infantil, fraldas, brinquedos infantis, carrinhos, maternidade.
+- Ferramentas: ferramentas manuais e eletricas, construcao, autopecas, acessorios carro/moto.
+- Outros: nao pertence a nenhum acima (bicicletas ergometricas/academia pesada, instrumentos musicais, livros, etc).
 
-Responda APENAS o nome exato de UMA categoria: [Tech, Casa, Beleza, Mercado, Moda, Pets, Bebes, Ferramentas, Outros].
-
+Responda APENAS: Tech, Casa, Beleza, Mercado, Moda, Pets, Bebes, Ferramentas ou Outros.
 Produto: {title}
 Categoria:"""
 
@@ -57,7 +58,7 @@ def get_client():
         logger.error(f"Failed to initialize Groq client: {e}")
         return None
 
-@functools.lru_cache(maxsize=2000)
+@functools.lru_cache(maxsize=3000)
 def classify_with_ai(title: str) -> str:
     """
     Classifies a product title into one of the 8 canonical categories using Groq LLM.
@@ -67,23 +68,32 @@ def classify_with_ai(title: str) -> str:
     if not client:
         return ""
 
-    try:
-        prompt = PROMPT_TEMPLATE.format(title=title.strip())
-        response = client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0
-        )
-        raw_cat = response.choices[0].message.content.strip().replace('.', '').strip()
-        # Find match in valid categories
-        for key, canonical in VALID_CATEGORIES.items():
-            if key.lower() == raw_cat.lower():
-                return canonical
-        logger.warning(f"AI returned unexpected category: '{raw_cat}' for '{title}'")
-        return ""
-    except Exception as e:
-        logger.error(f"Groq AI classification error for '{title}': {e}")
-        return ""
+    prompt = PROMPT_TEMPLATE.format(title=title.strip())
+
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model="qwen/qwen3.8-27b",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0
+            )
+            raw_cat = response.choices[0].message.content.strip().replace('.', '').strip()
+            # Find match in valid categories
+            for key, canonical in VALID_CATEGORIES.items():
+                if key.lower() == raw_cat.lower():
+                    return canonical
+            logger.warning(f"AI returned unexpected category: '{raw_cat}' for '{title}'")
+            return ""
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "rate_limit" in err_str.lower():
+                wait_time = 3 + attempt * 2
+                logger.info(f"Groq TPM limit reached, pausing {wait_time}s before retry (attempt {attempt+1}/3)...")
+                time.sleep(wait_time)
+                continue
+            logger.error(f"Groq AI classification error for '{title}': {e}")
+            return ""
+    return ""
 
 def classify_deal(title: str, fallback_category: str = "") -> str:
     """
