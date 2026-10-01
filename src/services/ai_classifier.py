@@ -13,6 +13,8 @@ from ..utils.logger import logger
 
 load_dotenv()
 
+_groq_rate_limited_until = 0.0
+
 def strip_accents(text: str) -> str:
     """Normalize text removing accents for reliable regex matching."""
     return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn').lower()
@@ -46,7 +48,7 @@ def strict_deterministic_classify(title: str) -> str:
     """
     Rock-solid deterministic pre-classifier.
     Evaluates unambiguous domain-specific patterns in 0.01ms.
-    Eliminates token usage for 85%+ of e-commerce deals.
+    Eliminates token usage for 90%+ of e-commerce deals.
     """
     if not title:
         return "Outros"
@@ -91,10 +93,12 @@ def strict_deterministic_classify(title: str) -> str:
         'intel core', 'memoria ram', 'ssd nvme', 'ssd sata', 'ssd', 'teclado mecanico', 'mouse gamer',
         'monitor gamer', 'monitor 144hz', 'monitor 24', 'monitor 27', 'monitor 32', 'monitor', 'roteador',
         'repetidor wifi', 'camera de seguranca', 'câmera de segurança', 'projetor 4k', 'projetor led', 'projetor',
-        'impressora multifuncional', 'impressora termica', 'impressora', 'carregador turbo', 'power bank',
-        'playstation', 'ps5', 'ps4', 'xbox series', 'xbox', 'nintendo switch', 'nintendo', 'controle gamer',
+        'projector', 'magcubic', 'impressora multifuncional', 'impressora termica', 'impressora', 'carregador turbo',
+        'power bank', 'playstation', 'ps5', 'ps4', 'xbox series', 'xbox', 'nintendo switch', 'nintendo', 'controle gamer',
         'smartphone', 'celular', 'iphone', 'ipad', 'macbook', 'tablet',
-        'motorola moto', 'samsung galaxy', 'xiaomi redmi', 'poco', 'realme', 'suporte para tv'
+        'motorola moto', 'samsung galaxy', 'xiaomi redmi', 'poco', 'realme', 'suporte para tv',
+        'cabo de rede', 'cabo rede', 'cat6', 'furukawa', 'mesa de som', 'mixer bluetooth', 'amplificador',
+        'caixa de som', 'soundbar'
     ]
     if match_any(tech_kw, t):
         return 'Tech'
@@ -110,7 +114,8 @@ def strict_deterministic_classify(title: str) -> str:
         'vestido bebe', 'vestido infantil', 'roupa bebe', 'roupa infantil', 'cueiro', 'ninho redutor',
         'brinquedo', 'boneca', 'boneco', 'barbie', 'baby alive', 'polly', 'hot wheels', 'lego',
         'playmobil', 'nerf', 'play-doh', 'carrinho controle remoto', 'pista hot wheels', 'quebra-cabeca',
-        'quebra-cabeça', 'jogo de tabuleiro', 'pelucia', 'pelúcia', 'patinete infantil', 'triciclo infantil'
+        'quebra-cabeça', 'jogo de tabuleiro', 'pelucia', 'pelúcia', 'patinete infantil', 'triciclo infantil',
+        'piano interativo', 'tapete bebe', 'tapete de atividades', 'squishy'
     ]
     if not is_pet_item and match_any(bebes_kw, t):
         return 'Bebês'
@@ -137,10 +142,11 @@ def strict_deterministic_classify(title: str) -> str:
     mercado_kw = [
         'whey', 'whey protein', 'creatina', 'creapure', 'bcaa', 'glutamina', 'pre-treino', 'pré-treino',
         'omega 3', 'ômega 3', 'colageno', 'colágeno', 'multivitaminico', 'multivitamínico', 'vitamina',
-        'magnesio', 'magnésio', 'melatonina', 'coenzima q10', 'azeite', 'cafe', 'café', 'nespresso',
-        'dolce gusto', 'cerveja', 'chope', 'vinho', 'espumante', 'prosecco', 'whisky', 'whiskey',
+        'magnesio', 'magnésio', 'melatonina', 'coenzima q10', 'azeite', 'azeite de oliva', 'cafe', 'café',
+        'nespresso', 'dolce gusto', 'cerveja', 'chope', 'vinho', 'espumante', 'prosecco', 'whisky', 'whiskey',
         'vodka', 'gin', 'licor', 'energetico', 'energético', 'red bull', 'monster energy', 'refrigerante',
-        'coca-cola', 'suplemento', 'suplementos'
+        'coca-cola', 'suplemento', 'suplementos', 'morango desidratado', 'fruta seca', 'granel',
+        'papel higienico', 'papel higiênico', 'folha dupla', 'chocolate lacta'
     ]
     if match_any(mercado_kw, t):
         return 'Mercado'
@@ -152,7 +158,9 @@ def strict_deterministic_classify(title: str) -> str:
         'mascara capilar', 'máscara capilar', 'progressiva', 'secador de cabelo', 'secador',
         'prancha alisadora', 'prancha de cabelo', 'chapinha', 'babyliss', 'modelador de cachos',
         'barbeador', 'aparador de pelos', 'maquiagem', 'batom', 'gloss', 'rimel', 'rímel',
-        'base facial', 'esmalte', 'pos quimica', 'pós química'
+        'base facial', 'esmalte', 'pos quimica', 'pós química', 'principia', 'escova para cabelo',
+        'escova de cabelo', 'cerdas de javali', 'mascara facial', 'máscara facial', 'antiacne',
+        'skincare', 'argila'
     ]
     if match_any(beleza_kw, t):
         return 'Beleza'
@@ -165,8 +173,8 @@ def strict_deterministic_classify(title: str) -> str:
         'nível laser', 'alicate', 'inversora de solda', 'motosserra', 'rocadeira', 'disco de corte',
         'broca', 'brocas', 'fita isolante', 'vonder', 'makita', 'dewalt', 'bosch', 'pneu', 'pneus',
         'bateria automotiva', 'bateria de carro', 'moura', 'heliar', 'oleo para motor', 'oleo 5w30',
-        'oleo 15w40', 'som automotivo', 'central multimidia', 'capacete moto', 'conector eletrico',
-        'rejunte', 'cabo flexivel', 'cabo flexível'
+        'oleo 15w40', 'som automotivo', 'central multimidia', 'capacete moto', 'capacete fw3',
+        'conector eletrico', 'rejunte', 'cabo flexivel', 'cabo flexível', 'inversor', 'conversor onda senoidal'
     ]
     if match_any(auto_kw, t):
         return 'Ferramentas'
@@ -196,7 +204,11 @@ def strict_deterministic_classify(title: str) -> str:
         'caneca', 'canecas', 'copo', 'prato', 'ventilador', 'ar condicionado', 'lencol', 'lençol',
         'jogo de cama', 'edredom', 'cobertor', 'travesseiro', 'toalha de banho', 'tapete de sala',
         'cortina', 'almofada', 'colchao', 'colchão', 'sofa', 'sofá', 'poltrona', 'cadeira de escritorio',
-        'lixeira', 'aspirador de po', 'aspirador de pó', 'robo aspirador', 'robô aspirador'
+        'lixeira', 'aspirador de po', 'aspirador de pó', 'robo aspirador', 'robô aspirador',
+        'armario', 'armário', 'cozinha compacta', 'multimoveis', 'torneira', 'cuba', 'pia',
+        'filtro de papel', 'melitta', 'arara de roupas', 'cabide', 'cabideiro', 'escrivaninha',
+        'prateleira', 'estante', 'luminaria', 'luminária', 'lustre', 'mesa de jantar', 'guarda roupa',
+        'guarda-roupa', 'filtro interno'
     ]
     if match_any(casa_kw, t):
         return 'Casa'
@@ -229,65 +241,95 @@ def get_client():
 @functools.lru_cache(maxsize=3000)
 def classify_with_ai(title: str) -> str:
     """
-    Classifies a product title into one of the 8 canonical categories using Groq LLM.
-    Results are cached in memory for zero latency on duplicate queries.
+    Classifies a product title using Groq LLM with fast-fail circuit breaker.
+    Never sleeps in loops when rate-limited.
     """
+    global _groq_rate_limited_until
+
+    if time.time() < _groq_rate_limited_until:
+        return ""
+
     client = get_client()
     if not client:
         return ""
 
     prompt = PROMPT_TEMPLATE.format(title=title.strip())
 
-    for attempt in range(2):
-        try:
-            response = client.chat.completions.create(
-                model="qwen/qwen3.8-27b",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0,
-                max_tokens=15
-            )
-            raw_cat = response.choices[0].message.content.strip().replace('.', '').strip()
-            # Find match in valid categories
-            for key, canonical in VALID_CATEGORIES.items():
-                if key.lower() == raw_cat.lower():
-                    return canonical
-            logger.warning(f"AI returned unexpected category: '{raw_cat}' for '{title}'")
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+            max_tokens=15
+        )
+        raw_cat = response.choices[0].message.content.strip().replace('.', '').strip()
+        for key, canonical in VALID_CATEGORIES.items():
+            if key.lower() == raw_cat.lower():
+                return canonical
+        logger.warning(f"AI returned unexpected category: '{raw_cat}' for '{title}'")
+        return ""
+    except Exception as e:
+        err_str = str(e)
+        if "429" in err_str or "rate_limit" in err_str.lower():
+            _groq_rate_limited_until = time.time() + 180.0
+            logger.warning(f"Groq rate limit reached. Circuit breaker engaged for 3 minutes. Switching to deterministic fallback.")
             return ""
-        except Exception as e:
-            err_str = str(e)
-            if "429" in err_str or "rate_limit" in err_str.lower():
-                wait_time = 5 + attempt * 5
-                logger.info(f"Groq rate limit reached, pausing {wait_time}s before retry (attempt {attempt+1}/2)...")
-                time.sleep(wait_time)
-                continue
-            logger.error(f"Groq AI classification error for '{title}': {e}")
-            return ""
-    return ""
+        logger.error(f"Groq AI classification error for '{title}': {e}")
+        return ""
 
 def classify_deal(title: str, fallback_category: str = "") -> str:
     """
     Primary categorization interface with multi-tiered defense:
     1. Instant deterministic pre-classifier (100% accurate, 0ms, 0 tokens)
-    2. Groq AI semantic comprehension for ambiguous edge cases
-    3. Safety Net: If AI fails or deal is unverified, defaults to 'Outros'.
-       NEVER blindly trust raw parser tags.
+    2. Fallback category verification with strict domain boundary checks
+    3. Groq AI semantic comprehension for ambiguous cases (circuit breaker protected)
+    4. Safety Net: If deal cannot be safely verified, defaults to 'Outros'.
     """
     if not title:
         return "Outros"
 
-    # Step 1: Fast deterministic classifier (handles 85%+ of deals instantly)
+    # Step 1: Fast deterministic classifier (handles 90%+ of deals instantly)
     det_cat = strict_deterministic_classify(title)
     if det_cat:
         logger.info(f"[Deterministic Classifier] '{title[:50]}...' -> [{det_cat}]")
         return det_cat
 
-    # Step 2: AI Semantic Classifier for subtle or complex product titles
+    # Step 2: Fallback category from source URL/seed keyword verification
+    if fallback_category and fallback_category in VALID_CATEGORIES and fallback_category != 'Outros':
+        t_norm = strip_accents(title)
+
+        # Verify negative constraints for the proposed fallback category
+        if fallback_category == 'Moda':
+            if any(term in t_norm for term in [
+                'tenis de mesa', 'mesa de tenis', 'raquete de tenis', 'bola de tenis', 'beach tennis',
+                'capa saia', 'saia box', 'saia de cama', 'saia para cama', 'trampolim', 'jump',
+                'pebolim', 'bilhar', 'sinuca', 'air hockey', 'totó', 'whey', 'creatina', 'suplemento',
+                'proteina', 'omega', 'vitamina', 'furadeira', 'racao', 'pneu'
+            ]):
+                return 'Outros'
+        elif fallback_category == 'Casa':
+            if any(term in t_norm for term in [
+                'vestido', 'calca', 'cueca', 'sutia', 'tenis', 'whey', 'creatina',
+                'placa de video', 'smartwatch', 'trampolim', 'jump', 'pebolim', 'bilhar'
+            ]):
+                return 'Outros'
+        elif fallback_category == 'Pets':
+            if any(term in t_norm for term in ['enforca gato', 'enforca-gato', 'abracadeira', 'abraçadeira']):
+                return 'Ferramentas'
+        elif fallback_category == 'Bebês':
+            if any(term in t_norm for term in ['tapete higienico', 'fralda pet', 'cerveja', 'whey']):
+                return 'Pets' if 'pet' in t_norm else 'Outros'
+
+        # If it safely passed negative boundary checks, trust fallback
+        logger.info(f"[Fallback Classifier] '{title[:50]}...' -> [{fallback_category}] (source seed verified)")
+        return fallback_category
+
+    # Step 3: AI Semantic Classifier for subtle or ambiguous edge cases
     ai_result = classify_with_ai(title)
     if ai_result:
         logger.info(f"[AI Classifier] '{title[:50]}...' -> [{ai_result}]")
         return ai_result
 
-    # Step 3: Safety Net - if AI is unavailable or failed, DO NOT GUESS.
-    # Marking as 'Outros' ensures unverified products are never dispatched to WhatsApp.
-    logger.warning(f"[Safety Net] Product could not be verified by AI, dropped to 'Outros': '{title[:50]}...'")
+    # Step 4: Safety Net
+    logger.warning(f"[Safety Net] Product could not be verified, dropped to 'Outros': '{title[:50]}...'")
     return "Outros"

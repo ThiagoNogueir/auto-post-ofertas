@@ -112,10 +112,14 @@ def process_deal(deal: Dict) -> bool:
         send_whatsapp = routing.get('send_to_whatsapp', False)
         niche_mode = routing.get('niche_mode', True)
         
-        # AI Semantic Categorization: determine true product niche via Groq LLM (with regex fallback)
-        parsed_category = deal.get('category', 'Outros')
-        category = classify_deal(deal_title, fallback_category=parsed_category)
-        deal['category'] = category
+        # AI Semantic Categorization: determine true product niche
+        if not deal.get('ai_classified'):
+            parsed_category = deal.get('category', 'Outros')
+            category = classify_deal(deal_title, fallback_category=parsed_category)
+            deal['category'] = category
+            deal['ai_classified'] = True
+        else:
+            category = deal.get('category', 'Outros')
         
         # In niche mode, skip items that couldn't be classified into one of the curated niches
         if category == 'Outros' or category not in ALL_NICHES:
@@ -455,7 +459,6 @@ def run_job():
                     if not deal.get('ai_classified'):
                         deal['category'] = classify_deal(deal.get('title', ''), fallback_category=deal.get('category', 'Outros'))
                         deal['ai_classified'] = True
-                        time.sleep(0.3)  # Gentle spacing to stay safely under TPM limits
                     
                     if deal.get('category') in cats:
                         cluster_candidates.append(deal)
