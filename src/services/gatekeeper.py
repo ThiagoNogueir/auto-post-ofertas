@@ -189,11 +189,16 @@ PET_POSITIVE_KEYWORDS = [
     'brinquedo para cachorro', 'brinquedo pet', 'brinquedo para gato', 'gatos castrados'
 ]
 
-# 7. BEBÊS & BRINQUEDOS - Forbidden terms (NEVER allow alcohol, adult supplements, adult lingerie, auto/tools/tech)
+# 7. BEBÊS & BRINQUEDOS - Forbidden terms (NEVER allow alcohol, adult supplements, adult lingerie, auto/tools/tech, PETS)
 BEBES_FORBIDDEN = [
+    # Bebidas Alcoólicas & Suplementos Adultos
     'cerveja', 'vinho', 'whisky', 'vodka', 'gin', 'cachaca', 'licor', 'whey', 'creatina',
-    'pre-treino', 'lingerie', 'sutia', 'calcinha adulto', 'cueca boxer', 'pneu', 'oleo motor',
-    'furadeira', 'esmerilhadeira', 'smart tv', 'tv box', 'placa de video', 'smartphone', 'notebook'
+    'pre-treino', 'lingerie', 'sutia', 'calcinha adulto', 'cueca boxer',
+    # Ferramentas, Auto & Tech
+    'pneu', 'oleo motor', 'furadeira', 'esmerilhadeira', 'smart tv', 'tv box', 'placa de video', 'smartphone', 'notebook',
+    # Pets & Animais (NUNCA tapete higiênico/fralda pet/ração em Bebês)
+    'pet', 'pets', 'cachorro', 'cachorros', 'cadela', 'gato', 'gatos', 'felino', 'cao', 'cão', 'caes', 'cães',
+    'tapete higienico', 'tapete higiênico', 'fralda pet', 'arranhador', 'areia para gato', 'pipicat', 'racao'
 ]
 
 # 8. FERRAMENTAS & AUTOMOTIVO - Forbidden terms (NEVER allow clothing, makeup, diapers, groceries)

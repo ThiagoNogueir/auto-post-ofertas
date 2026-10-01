@@ -99,7 +99,8 @@ def strict_deterministic_classify(title: str) -> str:
     if match_any(tech_kw, t):
         return 'Tech'
 
-    # 3. BEBÊS & BRINQUEDOS (Must check BEFORE adult fashion to catch baby clothes/dresses and toys)
+    # 3. BEBÊS & BRINQUEDOS (Must check BEFORE adult fashion, but NEVER match pet items)
+    is_pet_item = any(w in t for w in ['pet', 'pets', 'cachorro', 'cachorros', 'gato', 'gatos', 'cao', 'cão', 'caes', 'cães', 'felino'])
     bebes_kw = [
         'bebe', 'bebê', 'bebes', 'bebês', 'infantil', 'infantis', 'recem nascido', 'recém nascido',
         'maternidade', 'enxoval', 'fralda', 'fraldas', 'pampers', 'huggies', 'mamadeira', 'chupeta',
@@ -111,7 +112,7 @@ def strict_deterministic_classify(title: str) -> str:
         'playmobil', 'nerf', 'play-doh', 'carrinho controle remoto', 'pista hot wheels', 'quebra-cabeca',
         'quebra-cabeça', 'jogo de tabuleiro', 'pelucia', 'pelúcia', 'patinete infantil', 'triciclo infantil'
     ]
-    if match_any(bebes_kw, t):
+    if not is_pet_item and match_any(bebes_kw, t):
         return 'Bebês'
 
     # Cable zip tie / electrical tie: 'enforca gato' / 'abraçadeira' is hardware/tools, NEVER pets
@@ -122,7 +123,8 @@ def strict_deterministic_classify(title: str) -> str:
     pet_kw = [
         'racao', 'ração', 'premier pet', 'premier', 'royal canin', 'golden especial', 'golden', 'whiskas', 'pedigree',
         'quatree', 'bravecto', 'simparic', 'nexgard', 'antipulgas', 'vermifugo', 'vermífugo', 'arranhador',
-        'caminha pet', 'cama pet', 'cama para cachorro', 'tapete higienico', 'tapete higiênico',
+        'caminha pet', 'cama pet', 'cama para cachorro', 'tapete higienico', 'tapete higiênico', 'fralda pet',
+        'fralda cachorro', 'fralda para cachorro', 'fralda cao', 'fralda cão',
         'areia para gato', 'areia higienica', 'pipicat', 'churu', 'petisco', 'coleira', 'peitoral',
         'guia para cachorro', 'guia coleira', 'comedouro', 'bebedouro pet', 'fonte pet', 'shampoo pet',
         'granulado sanitario', 'brinquedo pet', 'brinquedo para cachorro', 'brinquedo para gato',

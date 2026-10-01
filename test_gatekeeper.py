@@ -72,6 +72,7 @@ test_suite = [
     ("Vestido Bebê Menina Malha Waffle Manga Longa Blue 6-9m", GROUP_BEBES, True, "Baby dress should pass Bebês"),
     ("Cerveja Corona Extra 330ml Pack com 6", GROUP_BEBES, False, "Alcohol must be blocked from Bebês"),
     ("Whey Protein Dark Lab", GROUP_BEBES, False, "Adult supplements must be blocked from Bebês"),
+    ("Tapete Higiênico Descartável para Cachorro - Fralda Pet", GROUP_BEBES, False, "Pet diaper must be blocked from Bebês"),
 
     # 7. FERRAMENTAS & AUTOMOTIVO Group tests
     ("Jogo de Chaves Combinadas Vonder 12 peças", GROUP_AUTO, True, "Tools should pass Auto"),

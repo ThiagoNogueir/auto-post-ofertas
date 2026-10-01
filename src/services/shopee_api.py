@@ -88,7 +88,7 @@ class ShopeeAffiliateAPI:
         sub_ids = sub_ids or ["promobot"]
         
         mutation = """
-        mutation ($originUrl: String!, $subIds: [String]) {
+        mutation ($originUrl: String!, $subIds: [String!]) {
           generateShortLink(input: { originUrl: $originUrl, subIds: $subIds }) {
             shortLink
           }

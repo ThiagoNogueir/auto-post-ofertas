@@ -304,7 +304,8 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     if match_any(tech_primary_kw, t_norm):
         return 'Eletrônicos'
 
-    # 2. Bebês & Maternidade (Checked before Moda to prevent baby/kids clothes from going to adult fashion)
+    # 2. Bebês & Maternidade (Checked before Moda, but NEVER match pet items)
+    is_pet_item = any(w in t_norm for w in ['pet', 'pets', 'cachorro', 'cachorros', 'gato', 'gatos', 'cao', 'cão', 'caes', 'cães', 'felino'])
     bebes_kw = [
         'bebe', 'bebê', 'bebes', 'bebês', 'infantil', 'infantis', 'recem nascido', 'recem-nascido',
         'recém nascido', 'recém-nascido', 'maternidade', 'enxoval', 'fralda', 'fraldas',
@@ -317,7 +318,7 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
         'copo de transicao', 'esterilizador de mamadeira', 'cadeirinha para auto', 'pagaozinho',
         'mijaozinho', 'mijãozinho', 'tapa fralda', 'culote bebe', 'pantufa bebe', 'sapatinho bebe'
     ]
-    if match_any(bebes_kw, t_norm):
+    if not is_pet_item and match_any(bebes_kw, t_norm):
         return 'Bebês'
 
     # 3. Brinquedos & Hobbies (Checked before Moda to prevent Barbie dresses/shoes from going to adult fashion)
@@ -340,7 +341,8 @@ def detect_category(title: str, url: str, source_url: str = "") -> str:
     pets_kw = [
         'racao', 'ração', 'premier pet', 'royal canin', 'golden especial', 'whiskas', 'pedigree',
         'quatree', 'bravecto', 'nexgard', 'simparic', 'antipulgas', 'antipulga', 'carrapato',
-        'vermifugo', 'vermífugo', 'tapete higienico', 'tapete higiênico', 'caminha pet', 'cama pet',
+        'vermifugo', 'vermífugo', 'tapete higienico', 'tapete higiênico', 'fralda pet',
+        'fralda cachorro', 'fralda para cachorro', 'caminha pet', 'cama pet',
         'cama para cachorro', 'arranhador', 'areia para gato', 'areia higienica', 'pipicat',
         'comedouro pet', 'bebedouro pet', 'fonte pet', 'coleira', 'guia para cachorro',
         'peitoral cachorro', 'peitoral pet', 'brinquedo para cachorro', 'brinquedo pet',

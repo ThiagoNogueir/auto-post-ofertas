@@ -379,23 +379,41 @@ def run_job():
             if shopee_api.is_configured():
                 logger.info("Shopee Open API active! Fetching category offers from Shopee...")
                 shopee_keywords = [
-                    ("pc gamer", "Games"),
+                    ("smartphone 5g", "Tech"),
+                    ("smartwatch", "Tech"),
+                    ("fone bluetooth", "Tech"),
                     ("placa de video", "Informática"),
                     ("teclado mecanico", "Informática"),
-                    ("casa e decoracao", "Casa"),
+                    ("air fryer", "Casa"),
+                    ("aspirador de po", "Casa"),
+                    ("jogo de panelas", "Casa"),
                     ("perfume importado", "Beleza"),
-                    ("whisky", "Bebidas")
+                    ("hidratante facial", "Beleza"),
+                    ("whey protein", "Mercado"),
+                    ("creatina 100% pura", "Mercado"),
+                    ("whisky", "Bebidas"),
+                    ("tenis masculino", "Moda"),
+                    ("tenis feminino", "Moda"),
+                    ("racao cachorro", "Pets"),
+                    ("tapete higienico pet", "Pets"),
+                    ("fralda pampers", "Bebês"),
+                    ("brinquedo infantil", "Brinquedos"),
+                    ("parafusadeira furadeira", "Ferramentas"),
+                    ("camera de re automotiva", "Automotivo")
                 ]
-                for kw, cat in shopee_keywords:
-                    shp_deals = shopee_api.fetch_offers(keyword=kw, limit=5)
+                for kw, default_cat in shopee_keywords:
+                    shp_deals = shopee_api.fetch_offers(keyword=kw, limit=3)
                     for d in shp_deals:
-                        d['category'] = cat
-                        if validate_deal(d):
-                            ext_id = extract_product_id(d.get('original_url', ''))
-                            if ext_id and not is_deal_processed(ext_id, title=d.get('title', '')):
-                                if not any(extract_product_id(c.get('original_url', '')) == ext_id for c in collected_candidates):
-                                    collected_candidates.append(d)
-                                    total_deals_found += 1
+                        # Dynamic AI / Deterministic Semantic Categorization from product title
+                        actual_cat = classify_deal(d.get('title', ''), fallback_category=default_cat)
+                        if actual_cat and actual_cat != 'Outros' and actual_cat in ALL_NICHES:
+                            d['category'] = actual_cat
+                            if validate_deal(d):
+                                ext_id = extract_product_id(d.get('original_url', ''))
+                                if ext_id and not is_deal_processed(ext_id, title=d.get('title', '')):
+                                    if not any(extract_product_id(c.get('original_url', '')) == ext_id for c in collected_candidates):
+                                        collected_candidates.append(d)
+                                        total_deals_found += 1
             else:
                 logger.debug("Shopee Open API not configured in .env (SHOPEE_APP_ID / SHOPEE_SECRET)")
         except Exception as se:
