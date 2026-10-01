@@ -402,7 +402,7 @@ def run_job():
                     ("camera de re automotiva", "Automotivo")
                 ]
                 for kw, default_cat in shopee_keywords:
-                    shp_deals = shopee_api.fetch_offers(keyword=kw, limit=3)
+                    shp_deals = shopee_api.fetch_offers(keyword=kw, limit=8)
                     for d in shp_deals:
                         # Dynamic AI / Deterministic Semantic Categorization from product title
                         actual_cat = classify_deal(d.get('title', ''), fallback_category=default_cat)
@@ -424,8 +424,8 @@ def run_job():
             # Sort candidates by discount percentage (highest discount first)
             collected_candidates.sort(key=lambda d: d.get('discount_pct', 0), reverse=True)
             
-            # Read limits from config (up to 8 deals per niche group per cycle)
-            max_per_group = urls_config.get('max_deals_per_group', 8)
+            # Read limits from config (up to 16 deals per niche group per cycle)
+            max_per_group = urls_config.get('max_deals_per_group', 16)
             
             GROUPS_CLUSTERS = {
                 'Tech & Games': TECH_CATEGORIES,
@@ -440,31 +440,73 @@ def run_job():
             
             dispatched_ids = set()
             
-            # Dispatch top deals for each cluster with on-demand AI classification
+            # Dispatch top deals with 50/50 store balancing (Mercado Livre vs Shopee)
             for cluster_name, cats in GROUPS_CLUSTERS.items():
                 cluster_sent = 0
                 logger.info(f"Scanning candidates for cluster '{cluster_name}' (Target: up to {max_per_group} deals)...")
+                
+                # Filter candidates belonging to this cluster
+                cluster_candidates = []
                 for deal in collected_candidates:
-                    if cluster_sent >= max_per_group:
-                        break
-                    
                     ext_id = extract_product_id(deal.get('original_url', ''))
                     if ext_id in dispatched_ids:
                         continue
                     
-                    # Classify with AI if not yet classified
                     if not deal.get('ai_classified'):
                         deal['category'] = classify_deal(deal.get('title', ''), fallback_category=deal.get('category', 'Outros'))
                         deal['ai_classified'] = True
                         time.sleep(0.3)  # Gentle spacing to stay safely under TPM limits
                     
                     if deal.get('category') in cats:
-                        if process_deal(deal):
-                            total_deals_sent += 1
-                            cluster_sent += 1
-                            dispatched_ids.add(ext_id)
-                            logger.info(f"[{cluster_name}] Deal {cluster_sent}/{max_per_group} sent: '{deal.get('title', '')[:45]}...'")
-                            time.sleep(3)
+                        cluster_candidates.append(deal)
+                
+                # Separate by store, preserving highest-discount order
+                ml_candidates = [d for d in cluster_candidates if d.get('store') != 'Shopee']
+                shp_candidates = [d for d in cluster_candidates if d.get('store') == 'Shopee']
+                
+                # 50/50 Target per store (e.g., 8 ML and 8 Shopee if max_per_group is 16)
+                target_each = max(1, max_per_group // 2)
+                selected_shp = shp_candidates[:target_each]
+                selected_ml = ml_candidates[:target_each]
+                
+                # If one store has fewer than target, borrow remaining slots from the other store
+                rem_slots = max_per_group - len(selected_shp) - len(selected_ml)
+                if rem_slots > 0:
+                    if len(shp_candidates) > len(selected_shp):
+                        extra = shp_candidates[len(selected_shp) : len(selected_shp) + rem_slots]
+                        selected_shp.extend(extra)
+                        rem_slots -= len(extra)
+                    if rem_slots > 0 and len(ml_candidates) > len(selected_ml):
+                        extra = ml_candidates[len(selected_ml) : len(selected_ml) + rem_slots]
+                        selected_ml.extend(extra)
+                
+                # Interleave alternating stores (ML, Shopee, ML, Shopee...)
+                balanced_queue = []
+                i_ml, i_shp = 0, 0
+                while (i_ml < len(selected_ml) or i_shp < len(selected_shp)) and len(balanced_queue) < max_per_group:
+                    if i_ml < len(selected_ml):
+                        balanced_queue.append(selected_ml[i_ml])
+                        i_ml += 1
+                    if i_shp < len(selected_shp):
+                        balanced_queue.append(selected_shp[i_shp])
+                        i_shp += 1
+                
+                logger.info(f"[{cluster_name}] Balanced Queue prepared: {len(selected_ml)} ML + {len(selected_shp)} Shopee (Total: {len(balanced_queue)})")
+                
+                # Send deals from balanced queue
+                for deal in balanced_queue:
+                    ext_id = extract_product_id(deal.get('original_url', ''))
+                    if ext_id in dispatched_ids:
+                        continue
+                    
+                    if process_deal(deal):
+                        total_deals_sent += 1
+                        cluster_sent += 1
+                        dispatched_ids.add(ext_id)
+                        store_name = deal.get('store', 'ML')
+                        logger.info(f"[{cluster_name}] Deal {cluster_sent}/{len(balanced_queue)} sent ({store_name}): '{deal.get('title', '')[:45]}...'")
+                        time.sleep(3)
+                        
                 logger.info(f"Cluster '{cluster_name}' complete: {cluster_sent} deals dispatched.")
         else:
             logger.info("No new deals meeting the discount, niche and ticket criteria in this cycle.")
