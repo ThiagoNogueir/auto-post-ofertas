@@ -74,9 +74,9 @@ def extract_product_id(url: str) -> str:
         if item_match:
             return item_match.group(1).upper()
             
-        # 6. Shopee: i.shopid.itemid
+        # 6. Shopee: i.shopid.itemid or product/shopid/itemid
         if 'shopee' in clean_url:
-            shopee_match = re.search(r'i\.(\d+)\.(\d+)', clean_url)
+            shopee_match = re.search(r'i\.(\d+)\.(\d+)', clean_url) or re.search(r'product/(\d+)/(\d+)', clean_url)
             if shopee_match:
                 return f"SHP_{shopee_match.group(1)}_{shopee_match.group(2)}"
                 
