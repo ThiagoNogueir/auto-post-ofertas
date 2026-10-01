@@ -257,7 +257,7 @@ def classify_with_ai(title: str) -> str:
 
     try:
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+            model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
             max_tokens=15
