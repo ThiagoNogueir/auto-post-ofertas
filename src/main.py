@@ -382,31 +382,93 @@ def run_job():
             shopee_api = ShopeeAffiliateAPI()
             if shopee_api.is_configured():
                 logger.info("Shopee Open API active! Fetching category offers from Shopee...")
+                from .utils.helpers import get_url_page, set_url_page
+                shopee_page = get_url_page("shopee_affiliate_rotation")
+                logger.info(f"Shopee query rotation: Page {shopee_page}")
+
                 shopee_keywords = [
+                    # Tech & Games
                     ("smartphone 5g", "Tech"),
                     ("smartwatch", "Tech"),
                     ("fone bluetooth", "Tech"),
                     ("placa de video", "Informática"),
                     ("teclado mecanico", "Informática"),
+                    ("mouse gamer", "Informática"),
+                    ("monitor gamer", "Informática"),
+                    ("headset gamer", "Games"),
+                    ("carregador portatil power bank", "Tech"),
+                    ("projetor 4k", "Tech"),
+                    
+                    # Casa & Decoração
                     ("air fryer", "Casa"),
                     ("aspirador de po", "Casa"),
                     ("jogo de panelas", "Casa"),
+                    ("ventilador", "Casa"),
+                    ("jogo de lencol casal", "Casa"),
+                    ("torneira gourmet", "Casa"),
+                    ("luminaria led", "Casa"),
+                    ("travesseiro nasa", "Casa"),
+
+                    # Beleza & Perfumaria (Abundant keywords so Beleza never runs out)
                     ("perfume importado", "Beleza"),
+                    ("perfume feminino", "Beleza"),
+                    ("perfume masculino", "Beleza"),
                     ("hidratante facial", "Beleza"),
+                    ("protetor solar", "Beleza"),
+                    ("serum facial", "Beleza"),
+                    ("shampoo profissional", "Beleza"),
+                    ("mascara capilar", "Beleza"),
+                    ("escova secadora", "Beleza"),
+                    ("maquiagem paleta", "Beleza"),
+                    ("aparador de pelos eletrico", "Beleza"),
+
+                    # Mercado & Bebidas
                     ("whey protein", "Mercado"),
                     ("creatina 100% pura", "Mercado"),
+                    ("pre treino", "Mercado"),
                     ("whisky", "Bebidas"),
+                    ("vinho tinto", "Bebidas"),
+                    ("azeite extra virgem", "Mercado"),
+                    ("cafe em graos", "Mercado"),
+                    ("omega 3", "Mercado"),
+
+                    # Moda & Calçados
                     ("tenis masculino", "Moda"),
                     ("tenis feminino", "Moda"),
+                    ("camisa masculina", "Moda"),
+                    ("vestido feminino", "Moda"),
+                    ("moletom masculino", "Moda"),
+                    ("bolsa feminina", "Moda"),
+                    ("carteira masculina couro", "Moda"),
+                    ("oculos de sol", "Moda"),
+
+                    # Pet Shop
                     ("racao cachorro", "Pets"),
+                    ("racao gato", "Pets"),
                     ("tapete higienico pet", "Pets"),
+                    ("arranhador gato", "Pets"),
+                    ("antipulgas pet", "Pets"),
+                    ("caminha pet", "Pets"),
+
+                    # Bebês & Brinquedos
                     ("fralda pampers", "Bebês"),
+                    ("fralda huggies", "Bebês"),
+                    ("lenco umedecido bebe", "Bebês"),
                     ("brinquedo infantil", "Brinquedos"),
+                    ("carrinho de bebe", "Bebês"),
+                    ("lego infantil", "Brinquedos"),
+                    ("boneca infantil", "Brinquedos"),
+
+                    # Ferramentas & Automotivo
                     ("parafusadeira furadeira", "Ferramentas"),
-                    ("camera de re automotiva", "Automotivo")
+                    ("jogo de chaves", "Ferramentas"),
+                    ("lavadora alta pressao", "Ferramentas"),
+                    ("camera de re automotiva", "Automotivo"),
+                    ("som automotivo bluetooth", "Automotivo"),
+                    ("compressor de ar automotivo", "Automotivo")
                 ]
                 for kw, default_cat in shopee_keywords:
-                    shp_deals = shopee_api.fetch_offers(keyword=kw, limit=8)
+                    shp_deals = shopee_api.fetch_offers(keyword=kw, page=shopee_page, limit=15)
                     for d in shp_deals:
                         # Dynamic AI / Deterministic Semantic Categorization from product title
                         actual_cat = classify_deal(d.get('title', ''), fallback_category=default_cat)
@@ -418,6 +480,10 @@ def run_job():
                                     if not any(extract_product_id(c.get('original_url', '')) == ext_id for c in collected_candidates):
                                         collected_candidates.append(d)
                                         total_deals_found += 1
+                
+                # Advance Shopee page rotation (pages 1 to 3)
+                next_shp_page = (shopee_page % 3) + 1
+                set_url_page("shopee_affiliate_rotation", next_shp_page)
             else:
                 logger.debug("Shopee Open API not configured in .env (SHOPEE_APP_ID / SHOPEE_SECRET)")
         except Exception as se:
